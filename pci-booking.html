@@ -428,7 +428,11 @@
       <button class="clear-btn" onclick="clearIinLog()">Clear</button>
     </div>
     <div class="iin-log-content" id="iinLogContent">
-      <div style="color: #666; text-align: center; padding: 20px;">IIN service calls will appear here when card numbers are entered</div>
+      <div style="color: #666; text-align: center; padding: 20px;">
+        Monitoring: GET /api/payments/iin/* requests<br>
+        <span style="font-size: 10px;">Load iframe and enter card numbers to see IIN calls.<br>
+        If no calls appear, check browser DevTools → Network tab → filter "iin"</span>
+      </div>
     </div>
   </div>
 
@@ -453,6 +457,8 @@ let lastIinBin = '';
 let lastIinTrigger = 'unknown';
 let iinCallHistory = [];
 let pendingIinCall = null;
+let iinObserver = null;
+let processedIinUrls = new Set(); // Track already processed URLs to avoid duplicates
 
 const iframe = document.getElementById('iframePayment');
 const wrapper = document.getElementById('iframeWrapper');
@@ -536,7 +542,7 @@ function clearLog() { logContent.innerHTML = ''; }
 
 // IIN Logging Functions
 function clearIinLog() {
-  document.getElementById('iinLogContent').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">IIN service calls will appear here when card numbers are entered</div>';
+  document.getElementById('iinLogContent').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Monitoring: GET /api/payments/iin/* requests<br><span style="font-size: 10px;">Load iframe and enter card numbers to see IIN calls.<br>If no calls appear, check browser DevTools → Network tab → filter "iin"</span></div>';
   iinCallCount = 0;
   iinFailedCount = 0;
   lastIinBin = '';
@@ -651,6 +657,154 @@ function detectIinTrigger(data) {
   return lastIinTrigger || 'Auto-detection';
 }
 
+// Network Request Monitoring for IIN API calls
+function startIinNetworkMonitoring() {
+  // Use PerformanceObserver to watch for IIN API calls
+  if (typeof PerformanceObserver !== 'undefined') {
+    try {
+      iinObserver = new PerformanceObserver(function(list) {
+        list.getEntries().forEach(function(entry) {
+          if (entry.name && entry.name.includes('/api/payments/iin')) {
+            processIinNetworkRequest(entry);
+          }
+        });
+      });
+      iinObserver.observe({ entryTypes: ['resource'] });
+      log('🔍 Network monitoring started for IIN API calls', 'iin');
+    } catch (e) {
+      log('⚠️ PerformanceObserver not available: ' + e.message, 'warning');
+    }
+  }
+
+  // Also poll performance entries periodically as backup
+  setInterval(checkPerformanceEntries, 500);
+}
+
+function checkPerformanceEntries() {
+  if (typeof performance !== 'undefined' && performance.getEntriesByType) {
+    var entries = performance.getEntriesByType('resource');
+    entries.forEach(function(entry) {
+      if (entry.name && entry.name.includes('/api/payments/iin') && !processedIinUrls.has(entry.name + entry.startTime)) {
+        processedIinUrls.add(entry.name + entry.startTime);
+        processIinNetworkRequest(entry);
+      }
+    });
+  }
+}
+
+function processIinNetworkRequest(entry) {
+  var url = entry.name;
+  var uniqueKey = url + '_' + entry.startTime;
+
+  // Avoid duplicate processing
+  if (processedIinUrls.has(uniqueKey)) return;
+  processedIinUrls.add(uniqueKey);
+
+  // Extract BIN from URL (e.g., /api/payments/iin/411111 or /api/payments/iin?bin=411111)
+  var bin = '';
+  var urlObj;
+  try {
+    urlObj = new URL(url);
+    // Check path for BIN (e.g., /api/payments/iin/411111)
+    var pathMatch = urlObj.pathname.match(/\/iin\/(\d+)/);
+    if (pathMatch) {
+      bin = pathMatch[1];
+    }
+    // Check query params (e.g., ?bin=411111 or ?iin=411111)
+    if (!bin) {
+      bin = urlObj.searchParams.get('bin') || urlObj.searchParams.get('iin') || urlObj.searchParams.get('cardNumber') || '';
+    }
+  } catch (e) {
+    // Fallback regex for BIN extraction
+    var binMatch = url.match(/\/iin\/(\d+)/) || url.match(/[?&]bin=(\d+)/) || url.match(/[?&]iin=(\d+)/);
+    if (binMatch) bin = binMatch[1];
+  }
+
+  // Determine trigger based on timing
+  var trigger = 'Network request';
+  var timeSinceStart = entry.startTime;
+  if (timeSinceStart < 1000) {
+    trigger = 'Initial load / Auto-detection';
+  } else {
+    trigger = 'User input (card number change)';
+  }
+
+  // Log the IIN call
+  logIinNetworkCall(bin || 'unknown', url, entry, trigger);
+}
+
+function logIinNetworkCall(bin, url, perfEntry, trigger) {
+  var iinLogContent = document.getElementById('iinLogContent');
+
+  // Clear placeholder on first entry
+  if (iinCallCount === 0) {
+    iinLogContent.innerHTML = '';
+  }
+
+  iinCallCount++;
+  lastIinBin = bin;
+  lastIinTrigger = trigger;
+
+  var time = new Date().toLocaleTimeString() + '.' + new Date().getMilliseconds().toString().padStart(3, '0');
+  var duration = perfEntry.duration ? perfEntry.duration.toFixed(0) + 'ms' : 'N/A';
+  var transferSize = perfEntry.transferSize ? (perfEntry.transferSize / 1024).toFixed(2) + 'KB' : 'N/A';
+
+  // Determine status based on response
+  var status = 'pending';
+  var statusText = '⏳ Checking...';
+  var statusClass = '';
+
+  // Check if we have response status info
+  if (perfEntry.responseStatus) {
+    if (perfEntry.responseStatus >= 200 && perfEntry.responseStatus < 300) {
+      status = 'success';
+      statusText = '✅ Success (HTTP ' + perfEntry.responseStatus + ')';
+      statusClass = 'success';
+    } else {
+      status = 'failed';
+      statusText = '❌ Failed (HTTP ' + perfEntry.responseStatus + ')';
+      statusClass = 'error';
+      iinFailedCount++;
+    }
+  } else if (perfEntry.duration > 0) {
+    // If we have duration, request completed
+    status = 'completed';
+    statusText = '✅ Completed (' + duration + ')';
+    statusClass = 'success';
+  }
+
+  var entry = document.createElement('div');
+  entry.className = 'iin-entry' + (status === 'failed' ? ' failed' : '');
+  entry.id = 'iin-entry-' + iinCallCount;
+  entry.innerHTML =
+    '<div class="iin-header">' +
+      '<span class="iin-seq">#' + iinCallCount + '</span>' +
+      '<span class="iin-time">' + time + '</span>' +
+    '</div>' +
+    '<div>BIN/IIN: <span class="iin-bin">' + bin + '</span></div>' +
+    '<div class="iin-trigger">Trigger: ' + trigger + '</div>' +
+    '<div style="font-size: 9px; color: #666; margin-top: 4px; word-break: break-all;">URL: ' + url + '</div>' +
+    '<div class="iin-result ' + statusClass + '">' + statusText + ' | Size: ' + transferSize + '</div>';
+
+  iinLogContent.appendChild(entry);
+  iinLogContent.scrollTop = iinLogContent.scrollHeight;
+
+  updateIinStats();
+  log('🌐 IIN API Call #' + iinCallCount + ' | BIN: ' + bin + ' | ' + statusText, status === 'failed' ? 'error' : 'iin');
+
+  // Store in history
+  iinCallHistory.push({
+    seq: iinCallCount,
+    bin: bin,
+    trigger: trigger,
+    url: url,
+    duration: perfEntry.duration,
+    transferSize: perfEntry.transferSize,
+    startTime: perfEntry.startTime,
+    status: status
+  });
+}
+
 function updateStatus(status, message) { statusDot.className = 'status-dot ' + status; statusText.textContent = message; }
 function setIframeHeight(height) { iframe.style.height = height + 'px'; log('Iframe height set to: ' + height + 'px', 'success'); }
 
@@ -688,13 +842,18 @@ function loadIframe() {
   wrapper.classList.remove('threeds-active');
   hideCustomError(); hideCustomSuccess();
   clearIinLog(); // Reset IIN tracking for new session
+  processedIinUrls.clear(); // Reset processed URLs
+  // Clear performance entries to avoid old data
+  if (performance.clearResourceTimings) {
+    performance.clearResourceTimings();
+  }
   setIframeHeight(DEFAULT_IFRAME_HEIGHT);
   var url = buildUrl();
   document.getElementById('generatedUrl').value = url;
   iframe.src = url;
   updateStatus('processing', 'Loading iframe...');
   log('Loading iframe...', 'info');
-  log('🔍 IIN tracking reset for new session', 'iin');
+  log('🔍 IIN tracking reset - monitoring GET /api/payments/iin/ calls', 'iin');
 }
 
 function copyUrl() {
@@ -935,8 +1094,9 @@ function resetConfig() {
 window.onload = function() {
   log('Page loaded - PCI Booking Card Entry Form Tester', 'info');
   log('Custom Validation enabled by default - errors will display ABOVE the iframe', 'success');
-  log('🔍 IIN Service logging enabled - tracking all BIN/IIN validation calls', 'iin');
-  log('Tip: Watch the IIN Log panel above to see why multiple IIN calls may occur', 'info');
+  startIinNetworkMonitoring();
+  log('Tip: IIN Log monitors GET /api/payments/iin/ requests to debug multiple calls', 'info');
+  log('⚠️ Note: Cross-origin requests from iframe may not be visible. Use browser DevTools Network tab as backup.', 'warning');
 };
 </script>
 </body>
