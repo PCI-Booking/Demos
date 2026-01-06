@@ -154,32 +154,9 @@
   .log-entry.success { border-color: #4caf50; color: #81c784; }
   .log-entry.warning { border-color: #ff9800; color: #ffb74d; }
   .log-entry.error { border-color: #f44336; color: #e57373; }
-  .log-entry.iin { border-color: #9c27b0; color: #ce93d8; }
-  .log-entry.iin-trigger { border-color: #00bcd4; color: #80deea; }
   .log-entry .time { color: #777; margin-right: 8px; }
-  .log-entry .seq { background: #9c27b0; color: white; padding: 1px 6px; border-radius: 10px; font-size: 9px; margin-right: 6px; }
   .clear-btn { background: transparent; border: 1px solid #fdb913; color: #fdb913; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
   .clear-btn:hover { background: #fdb913; color: #333; }
-
-  /* IIN Log Panel Styles */
-  .iin-log-panel { background: #1a1a2e; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
-  .iin-log-header { background: #16213e; color: white; padding: 10px 16px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #9c27b0; }
-  .iin-stats { display: flex; gap: 15px; font-size: 11px; }
-  .iin-stat { display: flex; align-items: center; gap: 5px; }
-  .iin-stat-value { background: #9c27b0; color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
-  .iin-stat-value.failed { background: #f44336; }
-  .iin-log-content { padding: 12px 16px; max-height: 200px; overflow-y: auto; font-family: 'Monaco','Menlo',monospace; font-size: 11px; }
-  .iin-entry { color: #aaa; margin-bottom: 8px; padding: 8px 10px; border-left: 3px solid #9c27b0; background: rgba(156, 39, 176, 0.1); border-radius: 0 4px 4px 0; }
-  .iin-entry.failed { border-color: #f44336; background: rgba(244, 67, 54, 0.1); }
-  .iin-entry .iin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  .iin-entry .iin-seq { background: #9c27b0; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
-  .iin-entry.failed .iin-seq { background: #f44336; }
-  .iin-entry .iin-time { color: #777; font-size: 10px; }
-  .iin-entry .iin-bin { color: #ce93d8; font-weight: bold; }
-  .iin-entry .iin-trigger { color: #80deea; font-size: 10px; margin-top: 4px; }
-  .iin-entry .iin-result { margin-top: 4px; font-size: 10px; }
-  .iin-entry .iin-result.success { color: #81c784; }
-  .iin-entry .iin-result.error { color: #e57373; }
   @media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } .form-group.half-width { grid-column: span 2; } }
   @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } .form-group.half-width, .form-group.full-width { grid-column: span 1; } }
 </style>
@@ -417,34 +394,6 @@
     </div>
   </div>
 
-  <div class="iin-log-panel">
-    <div class="iin-log-header">
-      <span>🔍 IIN Service Debugging Guide</span>
-    </div>
-    <div class="iin-log-content" id="iinLogContent" style="max-height: 250px;">
-      <div style="color: #ccc; padding: 15px; line-height: 1.6;">
-        <div style="color: #f44336; font-weight: bold; margin-bottom: 10px;">⚠️ IIN calls cannot be captured programmatically (cross-origin security)</div>
-        <div style="color: #fdb913; font-weight: bold; margin-bottom: 8px;">To debug IIN calls, use Browser DevTools:</div>
-        <ol style="margin-left: 20px; color: #aaa;">
-          <li>Press <kbd style="background:#444;padding:2px 6px;border-radius:3px;">F12</kbd> to open DevTools</li>
-          <li>Go to <strong style="color:#81c784;">Network</strong> tab</li>
-          <li>In the filter box, type: <code style="background:#444;padding:2px 6px;border-radius:3px;color:#ce93d8;">iin</code></li>
-          <li>Load the iframe and enter card numbers</li>
-          <li>Watch for <code style="color:#ce93d8;">GET /api/payments/iin/{BIN}</code> requests</li>
-        </ol>
-        <div style="margin-top: 12px; padding: 10px; background: rgba(253,185,19,0.1); border-left: 3px solid #fdb913; border-radius: 0 4px 4px 0;">
-          <strong style="color: #fdb913;">What to look for:</strong><br>
-          <span style="color: #aaa; font-size: 11px;">
-            • Multiple calls with same BIN = potential bug<br>
-            • Check "Initiator" column to see what triggered each call<br>
-            • Check timing between calls<br>
-            • Look at response status (200 vs 4xx/5xx)
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="log-panel">
     <div class="log-header"><span>□ PostMessage Log</span><button class="clear-btn" onclick="clearLog()">Clear</button></div>
     <div class="log-content" id="logContent"></div>
@@ -458,14 +407,6 @@ const THREEDS_IFRAME_HEIGHT = 600;
 let iframeReady = false;
 let threeDsActive = false;
 let lastValidationData = null;
-
-// IIN Tracking Variables
-let iinCallCount = 0;
-let iinFailedCount = 0;
-let lastIinBin = '';
-let lastIinTrigger = 'unknown';
-let iinCallHistory = [];
-let pendingIinCall = null;
 
 const iframe = document.getElementById('iframePayment');
 const wrapper = document.getElementById('iframeWrapper');
@@ -547,120 +488,6 @@ function log(message, type) {
 
 function clearLog() { logContent.innerHTML = ''; }
 
-// IIN Logging Functions (Note: Cross-origin iframe requests cannot be captured programmatically)
-function clearIinLog() {
-  // Reset tracking variables - actual monitoring must be done via browser DevTools
-  iinCallCount = 0;
-  iinFailedCount = 0;
-  lastIinBin = '';
-  iinCallHistory = [];
-}
-
-function updateIinStats() {
-  // Stats display removed - use browser DevTools Network tab to monitor IIN calls
-}
-
-function logIinCall(bin, trigger, isRequest) {
-  var iinLogContent = document.getElementById('iinLogContent');
-
-  // Clear placeholder on first entry
-  if (iinCallCount === 0 && isRequest) {
-    iinLogContent.innerHTML = '';
-  }
-
-  if (isRequest) {
-    iinCallCount++;
-    lastIinBin = bin;
-    lastIinTrigger = trigger;
-
-    var time = new Date().toLocaleTimeString() + '.' + new Date().getMilliseconds().toString().padStart(3, '0');
-
-    pendingIinCall = {
-      seq: iinCallCount,
-      bin: bin,
-      trigger: trigger,
-      time: time,
-      startTime: Date.now()
-    };
-
-    var entry = document.createElement('div');
-    entry.className = 'iin-entry';
-    entry.id = 'iin-entry-' + iinCallCount;
-    entry.innerHTML =
-      '<div class="iin-header">' +
-        '<span class="iin-seq">#' + iinCallCount + '</span>' +
-        '<span class="iin-time">' + time + '</span>' +
-      '</div>' +
-      '<div>BIN/IIN: <span class="iin-bin">' + bin + '</span></div>' +
-      '<div class="iin-trigger">Trigger: ' + trigger + '</div>' +
-      '<div class="iin-result" id="iin-result-' + iinCallCount + '">⏳ Waiting for response...</div>';
-
-    iinLogContent.appendChild(entry);
-    iinLogContent.scrollTop = iinLogContent.scrollHeight;
-
-    updateIinStats();
-    log('🔍 IIN Request #' + iinCallCount + ' | BIN: ' + bin + ' | Trigger: ' + trigger, 'iin');
-  }
-}
-
-function logIinResponse(success, cardType, errorMessage, rawData) {
-  if (pendingIinCall) {
-    var elapsed = Date.now() - pendingIinCall.startTime;
-    var resultEl = document.getElementById('iin-result-' + pendingIinCall.seq);
-    var entryEl = document.getElementById('iin-entry-' + pendingIinCall.seq);
-
-    if (resultEl) {
-      if (success) {
-        resultEl.className = 'iin-result success';
-        resultEl.innerHTML = '✅ Success (' + elapsed + 'ms) - Card Type: <strong>' + (cardType || 'detected') + '</strong>';
-      } else {
-        resultEl.className = 'iin-result error';
-        resultEl.innerHTML = '❌ Failed (' + elapsed + 'ms) - ' + (errorMessage || 'Validation failed');
-        if (entryEl) entryEl.className = 'iin-entry failed';
-        iinFailedCount++;
-        updateIinStats();
-      }
-    }
-
-    // Store in history for analysis
-    iinCallHistory.push({
-      seq: pendingIinCall.seq,
-      bin: pendingIinCall.bin,
-      trigger: pendingIinCall.trigger,
-      success: success,
-      cardType: cardType,
-      error: errorMessage,
-      elapsed: elapsed,
-      rawData: rawData
-    });
-
-    var logType = success ? 'success' : 'error';
-    var logMsg = success
-      ? '✅ IIN Response #' + pendingIinCall.seq + ' | CardType: ' + (cardType || 'unknown') + ' (' + elapsed + 'ms)'
-      : '❌ IIN Response #' + pendingIinCall.seq + ' | Error: ' + (errorMessage || 'failed') + ' (' + elapsed + 'ms)';
-    log(logMsg, logType);
-
-    pendingIinCall = null;
-  }
-}
-
-function detectIinTrigger(data) {
-  // Analyze the message to determine what triggered the IIN call
-  if (typeof data === 'object') {
-    if (data.trigger) return data.trigger;
-    if (data.event) return 'Event: ' + data.event;
-    if (data.action) return 'Action: ' + data.action;
-  }
-  if (typeof data === 'string') {
-    if (data.includes('input') || data.includes('change')) return 'Card number input';
-    if (data.includes('blur') || data.includes('focus')) return 'Field focus change';
-    if (data.includes('paste')) return 'Paste event';
-    if (data.includes('validate')) return 'Form validation';
-    if (data.includes('submit')) return 'Form submission';
-  }
-  return lastIinTrigger || 'Auto-detection';
-}
-
 function updateStatus(status, message) { statusDot.className = 'status-dot ' + status; statusText.textContent = message; }
 function setIframeHeight(height) { iframe.style.height = height + 'px'; log('Iframe height set to: ' + height + 'px', 'success'); }
 
@@ -697,7 +524,6 @@ function loadIframe() {
   iframeReady = false; threeDsActive = false;
   wrapper.classList.remove('threeds-active');
   hideCustomError(); hideCustomSuccess();
-  clearIinLog();
   setIframeHeight(DEFAULT_IFRAME_HEIGHT);
   var url = buildUrl();
   document.getElementById('generatedUrl').value = url;
@@ -757,106 +583,13 @@ function performCustomValidation(cardData) {
   return { shouldReject: shouldReject, message: rejectReason };
 }
 
-// IIN Message Detection and Logging
-function detectAndLogIinMessage(data, parsed) {
-  var isIinRelated = false;
-  var dataStr = typeof data === 'string' ? data.toLowerCase() : '';
-  var jsonStr = parsed ? JSON.stringify(parsed).toLowerCase() : '';
-
-  // Check for IIN/BIN related keywords in the message
-  var iinKeywords = ['iin', 'bin', 'cardtype', 'card_type', 'cardidentification', 'issuer', 'cardscheme', 'scheme', 'luhn'];
-  var hasIinKeyword = iinKeywords.some(function(kw) {
-    return dataStr.includes(kw) || jsonStr.includes(kw);
-  });
-
-  // Detect IIN request patterns
-  if (parsed) {
-    // Check for IIN lookup request
-    if (parsed.messageType === 'IINLookup' || parsed.messageType === 'BINLookup' ||
-        parsed.action === 'iinLookup' || parsed.action === 'binLookup' ||
-        parsed.type === 'iin' || parsed.type === 'bin') {
-      var bin = parsed.bin || parsed.iin || parsed.cardNumber || parsed.leadingDigits || '';
-      var trigger = detectIinTrigger(parsed);
-      logIinCall(bin, trigger, true);
-      isIinRelated = true;
-    }
-
-    // Check for IIN response patterns
-    if (parsed.messageType === 'IINResponse' || parsed.messageType === 'BINResponse' ||
-        parsed.messageType === 'CardTypeDetected' || parsed.messageType === 'CardIdentified' ||
-        (parsed.cardType && (parsed.leadingDigits || parsed.bin || parsed.iin))) {
-      var success = !parsed.error && !parsed.failed && parsed.cardType;
-      var cardType = parsed.cardType || parsed.scheme || parsed.brand || '';
-      var errorMsg = parsed.error || parsed.errorMessage || parsed.message || '';
-      logIinResponse(success, cardType, errorMsg, parsed);
-      isIinRelated = true;
-    }
-
-    // Check for card number change events that might trigger IIN
-    if (parsed.messageType === 'CardNumberChanged' || parsed.messageType === 'InputChanged' ||
-        parsed.event === 'cardNumberInput' || parsed.event === 'binChanged') {
-      var cardNum = parsed.cardNumber || parsed.value || parsed.bin || '';
-      if (cardNum.length >= 6) {
-        var binValue = cardNum.substring(0, Math.min(8, cardNum.length));
-        logIinCall(binValue, 'Card number change (length: ' + cardNum.length + ')', true);
-        isIinRelated = true;
-      }
-    }
-
-    // Check for validation-related IIN calls
-    if (parsed.messageType === 'ValidationStarted' || parsed.messageType === 'ValidatingCard') {
-      if (parsed.bin || parsed.leadingDigits) {
-        logIinCall(parsed.bin || parsed.leadingDigits, 'Pre-submission validation', true);
-        isIinRelated = true;
-      }
-    }
-
-    // Check for IIN validation failure
-    if (parsed.messageType === 'IINValidationFailed' || parsed.messageType === 'BINValidationFailed' ||
-        parsed.messageType === 'CardNotRecognized' || parsed.messageType === 'InvalidCardType' ||
-        (parsed.error && hasIinKeyword)) {
-      logIinResponse(false, null, parsed.error || parsed.message || 'IIN validation failed', parsed);
-      isIinRelated = true;
-    }
-
-    // Check for successful card type detection (implicit IIN success)
-    if (parsed.messageType === 'CardTypeChanged' && parsed.cardType) {
-      // This often comes after an IIN lookup
-      if (pendingIinCall) {
-        logIinResponse(true, parsed.cardType, null, parsed);
-      }
-      isIinRelated = true;
-    }
-
-    // CustomValidation also involves IIN data
-    if (parsed.messageType === 'CustomValidation' && parsed.cardType) {
-      // Log this as an IIN-related event since it contains card identification data
-      log('📋 Card identified for custom validation: ' + parsed.cardType.toUpperCase() +
-          ' (BIN: ' + (parsed.leadingDigits || 'N/A') + ')', 'iin');
-      isIinRelated = true;
-    }
-  }
-
-  // String-based IIN detection
-  if (typeof data === 'string' && !parsed) {
-    if (dataStr.includes('iin') || dataStr.includes('bin')) {
-      isIinRelated = true;
-    }
-  }
-
-  return isIinRelated;
-}
-
 function handlePostMessage(event) {
   if (event.origin.indexOf('pcibooking.net') === -1) return;
   var data = event.data, parsed = null;
   if (typeof data === 'string') { try { parsed = JSON.parse(data); } catch (e) {} }
   else if (typeof data === 'object') parsed = data;
 
-  // Detect and log IIN-related messages
-  var isIinRelated = detectAndLogIinMessage(data, parsed);
-
-  if (parsed) log('Received: ' + JSON.stringify(parsed), isIinRelated ? 'iin' : 'info');
+  if (parsed) log('Received: ' + JSON.stringify(parsed), 'info');
   else log('Received: ' + data, 'info');
 
   if (typeof data === 'string' && !parsed) {
@@ -944,7 +677,6 @@ function resetConfig() {
 window.onload = function() {
   log('Page loaded - PCI Booking Card Entry Form Tester', 'info');
   log('Custom Validation enabled by default - errors will display ABOVE the iframe', 'success');
-  log('💡 To debug IIN calls: Open DevTools (F12) → Network tab → Filter "iin"', 'info');
 };
 </script>
 </body>
