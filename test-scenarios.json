@@ -1,0 +1,338 @@
+{
+  "version": "1.0.0",
+  "description": "PCI Booking Automated Test Scenarios",
+  "testCards": {
+    "frictionless": {
+      "visa": {
+        "number": "4761739000060016",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "description": "Visa - 3DS Frictionless flow"
+      },
+      "mastercard": {
+        "number": "5455330200000016",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "description": "Mastercard - 3DS Frictionless flow"
+      }
+    },
+    "deviceFingerprint": {
+      "visa": {
+        "number": "4761739001010010",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "description": "Visa - Device Fingerprint (DFP) flow"
+      },
+      "mastercard": {
+        "number": "5185520050000010",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "description": "Mastercard - Device Fingerprint (DFP) flow"
+      }
+    },
+    "challenge": {
+      "visa": {
+        "number": "4018810000150015",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "successOtp": "0101",
+        "failOtp": "3333",
+        "description": "Visa - 3DS Challenge with OTP"
+      },
+      "mastercard": {
+        "number": "5299910010000015",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "successOtp": "4445",
+        "failOtp": "9999",
+        "description": "Mastercard - 3DS Challenge with OTP"
+      }
+    },
+    "dfpChallenge": {
+      "visa": {
+        "number": "4018810000190011",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "successOtp": "0101",
+        "failOtp": "3333",
+        "description": "Visa - DFP + Challenge flow"
+      },
+      "mastercard": {
+        "number": "5420711000401011",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Three DS test",
+        "successOtp": "4445",
+        "failOtp": "9999",
+        "description": "Mastercard - DFP + Challenge flow"
+      }
+    },
+    "invalid": {
+      "luhnFail": {
+        "number": "4111111111111112",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Test User",
+        "description": "Invalid card - fails Luhn check"
+      },
+      "invalidBin": {
+        "number": "0000000000000000",
+        "expiry": "12/28",
+        "cvv": "123",
+        "name": "Test User",
+        "description": "Invalid card - fails BIN check"
+      }
+    }
+  },
+  "postMessageEvents": {
+    "ready": {
+      "description": "Iframe has loaded and is ready for input",
+      "type": "string"
+    },
+    "valid": {
+      "description": "Form validation passed",
+      "type": "string"
+    },
+    "invalid": {
+      "description": "Form validation failed",
+      "type": "string",
+      "aliases": ["false"]
+    },
+    "frameDimensionsChanged": {
+      "description": "Iframe dimensions have changed",
+      "type": "string",
+      "format": "frameDimensionsChanged:width:height"
+    },
+    "CustomValidation": {
+      "description": "Custom validation request from iframe",
+      "type": "object",
+      "payload": {
+        "messageType": "CustomValidation",
+        "cardType": "string",
+        "leadingDigits": "string",
+        "lastDigits": "string"
+      }
+    },
+    "ThreeDsChallengeLoaded": {
+      "description": "3DS challenge iframe has loaded",
+      "type": "string|object"
+    },
+    "OTPdisplayed": {
+      "description": "OTP input screen is displayed",
+      "type": "object"
+    },
+    "OTPsubmitted": {
+      "description": "OTP has been submitted",
+      "type": "object"
+    },
+    "CardSubmitSuccess": {
+      "description": "Card successfully tokenized",
+      "type": "object",
+      "payload": {
+        "messageType": "CardSubmitSuccess",
+        "cardToken": "string",
+        "cardType": "string",
+        "lastDigits": "string",
+        "threeDSecIndication": "string (optional)"
+      }
+    },
+    "CardSubmitFailure": {
+      "description": "Card submission failed",
+      "type": "object",
+      "payload": {
+        "messageType": "CardSubmitFailure",
+        "message": "string",
+        "errorCode": "string (optional)"
+      }
+    }
+  },
+  "testScenarios": {
+    "non3ds": [
+      {
+        "id": "non3ds-visa-success",
+        "name": "Visa - Successful Tokenization (No 3DS)",
+        "description": "Valid Visa card without 3DS, custom validation accepts",
+        "cardRef": "frictionless.visa",
+        "config": {
+          "ThreeDS": "false",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      },
+      {
+        "id": "non3ds-mc-success",
+        "name": "Mastercard - Successful Tokenization (No 3DS)",
+        "description": "Valid Mastercard without 3DS, custom validation accepts",
+        "cardRef": "frictionless.mastercard",
+        "config": {
+          "ThreeDS": "false",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      },
+      {
+        "id": "non3ds-custom-reject",
+        "name": "Custom Validation - Reject Card",
+        "description": "Valid card rejected by custom validation",
+        "cardRef": "frictionless.visa",
+        "config": {
+          "ThreeDS": "false",
+          "useCustomValidation": "true",
+          "customValidationAction": "reject"
+        },
+        "expectedEvents": ["ready", "CustomValidation"],
+        "expectedOutcome": "validation-reject"
+      },
+      {
+        "id": "non3ds-invalid-luhn",
+        "name": "Invalid Card - Luhn Check Failure",
+        "description": "Card number fails Luhn algorithm validation",
+        "cardRef": "invalid.luhnFail",
+        "config": {
+          "ThreeDS": "false",
+          "useCustomValidation": "false"
+        },
+        "expectedEvents": ["ready"],
+        "expectedOutcome": "failure"
+      }
+    ],
+    "3dsfrictionless": [
+      {
+        "id": "3ds-visa-frictionless",
+        "name": "Visa - 3DS Frictionless Success",
+        "description": "3DS frictionless flow - no user challenge required",
+        "cardRef": "frictionless.visa",
+        "config": {
+          "ThreeDS": "true",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept",
+          "email": "test@test.com",
+          "amount": "1000"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      },
+      {
+        "id": "3ds-mc-frictionless",
+        "name": "Mastercard - 3DS Frictionless Success",
+        "description": "3DS frictionless flow with Mastercard",
+        "cardRef": "frictionless.mastercard",
+        "config": {
+          "ThreeDS": "true",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept",
+          "email": "test@test.com",
+          "amount": "1000"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      }
+    ],
+    "3dschallenge": [
+      {
+        "id": "3ds-visa-challenge-success",
+        "name": "Visa - 3DS Challenge Success",
+        "description": "Enter OTP 0101 when prompted for successful authentication",
+        "cardRef": "challenge.visa",
+        "otp": "0101",
+        "config": {
+          "ThreeDS": "true",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept",
+          "email": "test@test.com",
+          "amount": "1000"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "ThreeDsChallengeLoaded", "OTPdisplayed", "OTPsubmitted", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      },
+      {
+        "id": "3ds-visa-challenge-fail",
+        "name": "Visa - 3DS Challenge Failure",
+        "description": "Enter OTP 3333 to simulate failed authentication",
+        "cardRef": "challenge.visa",
+        "otp": "3333",
+        "config": {
+          "ThreeDS": "true",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept",
+          "email": "test@test.com",
+          "amount": "1000"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "ThreeDsChallengeLoaded", "OTPdisplayed", "CardSubmitFailure"],
+        "expectedOutcome": "failure"
+      },
+      {
+        "id": "3ds-mc-challenge-success",
+        "name": "Mastercard - 3DS Challenge Success",
+        "description": "Enter OTP 4445 when prompted for successful authentication",
+        "cardRef": "challenge.mastercard",
+        "otp": "4445",
+        "config": {
+          "ThreeDS": "true",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept",
+          "email": "test@test.com",
+          "amount": "1000"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "ThreeDsChallengeLoaded", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      },
+      {
+        "id": "3ds-mc-challenge-fail",
+        "name": "Mastercard - 3DS Challenge Failure",
+        "description": "Enter OTP 9999 to simulate failed authentication",
+        "cardRef": "challenge.mastercard",
+        "otp": "9999",
+        "config": {
+          "ThreeDS": "true",
+          "useCustomValidation": "true",
+          "customValidationAction": "accept",
+          "email": "test@test.com",
+          "amount": "1000"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "ThreeDsChallengeLoaded", "CardSubmitFailure"],
+        "expectedOutcome": "failure"
+      }
+    ],
+    "customValidation": [
+      {
+        "id": "cv-reject-visa",
+        "name": "Reject Visa Cards Only",
+        "description": "Custom validation rejects Visa, accepts others",
+        "cardRef": "frictionless.visa",
+        "config": {
+          "ThreeDS": "false",
+          "useCustomValidation": "true",
+          "customValidationAction": "reject-visa"
+        },
+        "expectedEvents": ["ready", "CustomValidation"],
+        "expectedOutcome": "validation-reject"
+      },
+      {
+        "id": "cv-accept-mc",
+        "name": "Accept Mastercard (Visa rejected config)",
+        "description": "Mastercard accepted when Visa-only rejection is active",
+        "cardRef": "frictionless.mastercard",
+        "config": {
+          "ThreeDS": "false",
+          "useCustomValidation": "true",
+          "customValidationAction": "reject-visa"
+        },
+        "expectedEvents": ["ready", "CustomValidation", "CardSubmitSuccess"],
+        "expectedOutcome": "success"
+      }
+    ]
+  },
+  "customTests": []
+}
