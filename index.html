@@ -94,6 +94,58 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
 .empty-state-text { font-size: 14px; margin-bottom: 16px; color: #666; }
 
+/* Account Management */
+.account-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.form-group { margin-bottom: 0; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group label { display: block; font-size: 11px; font-weight: 600; color: #333; margin-bottom: 4px; text-transform: uppercase; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #fdb913; }
+.form-group textarea { resize: vertical; min-height: 60px; font-family: monospace; font-size: 11px; }
+.form-group .hint { font-size: 10px; color: #888; font-weight: normal; text-transform: none; }
+
+.account-list { max-height: 400px; overflow-y: auto; }
+.account-item { padding: 14px; background: #fafafa; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.account-item:hover { border-color: #fdb913; background: #fffef5; }
+.account-item.active { border-color: #fdb913; background: #fffbe6; }
+.account-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.account-name { font-size: 14px; font-weight: 600; color: #333; }
+.account-env { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.account-env.plan { background: #2196f3; color: white; }
+.account-env.qa { background: #9c27b0; color: white; }
+.account-env.pilot { background: #ff9800; color: #000; }
+.account-env.prod { background: #f44336; color: white; }
+.account-details { font-size: 11px; color: #666; }
+.account-actions { display: flex; gap: 8px; margin-top: 10px; }
+.account-actions button { padding: 6px 12px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; }
+.btn-edit { background: #333; color: white; }
+.btn-delete { background: #f44336; color: white; }
+.btn-use { background: #4caf50; color: white; }
+
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.btn { padding: 10px 20px; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: #fdb913; color: #333; }
+.btn-primary:hover { background: #e5a811; }
+.btn-secondary { background: #333; color: white; }
+.btn-secondary:hover { background: #444; }
+
+.tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 16px; }
+.tab-btn { padding: 10px 20px; background: none; border: none; font-size: 13px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab-btn:hover { color: #333; }
+.tab-btn.active { color: #333; border-bottom-color: #fdb913; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: white; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.modal-header { background: #333; color: white; padding: 16px 20px; border-bottom: 3px solid #fdb913; display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { font-size: 16px; font-weight: 500; }
+.modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+
 /* Responsive */
 @media (max-width: 1000px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -104,6 +156,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   .test-pages-grid { grid-template-columns: 1fr; }
   .nav-bar { flex-wrap: wrap; justify-content: center; }
   .nav-title { width: 100%; text-align: center; margin-bottom: 8px; }
+  .account-form { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -188,6 +241,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         </div>
       </div>
 
+      <!-- Account Management -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Account Management</h2>
+          <button class="btn btn-primary" onclick="openAccountModal()" style="padding: 8px 16px; font-size: 12px;">+ Add Account</button>
+        </div>
+        <div class="card-body">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="all" onclick="filterAccounts('all')">All</button>
+            <button class="tab-btn" data-tab="plan" onclick="filterAccounts('plan')">Developer</button>
+            <button class="tab-btn" data-tab="qa" onclick="filterAccounts('qa')">QA</button>
+            <button class="tab-btn" data-tab="pilot" onclick="filterAccounts('pilot')">Staging</button>
+            <button class="tab-btn" data-tab="prod" onclick="filterAccounts('prod')">Production</button>
+          </div>
+          <div class="account-list" id="accountList">
+            <div class="empty-state" style="padding: 30px;">
+              <div class="empty-state-icon">👤</div>
+              <div class="empty-state-text">No accounts configured. Add your first account to get started.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Recent Tests -->
       <div class="card">
         <div class="card-header">
@@ -258,12 +334,69 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   </div>
 </div>
 
+<!-- Account Modal -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Account</h3>
+      <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="account-form">
+        <input type="hidden" id="accountId">
+        <div class="form-group full-width">
+          <label>Account Name</label>
+          <input type="text" id="accountName" placeholder="e.g., Client XYZ Sandbox">
+        </div>
+        <div class="form-group">
+          <label>Environment</label>
+          <select id="accountEnv">
+            <option value="plan">Developer</option>
+            <option value="qa">QA</option>
+            <option value="pilot" selected>Staging</option>
+            <option value="prod">Production</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="accountApiKey" placeholder="Your API key">
+        </div>
+        <div class="form-group">
+          <label>Brand</label>
+          <input type="text" id="accountBrand" placeholder="e.g., ArekSandbox">
+        </div>
+        <div class="form-group">
+          <label>Merchant Name</label>
+          <input type="text" id="accountMerchantName" placeholder="Display name in iframe">
+        </div>
+        <div class="form-group full-width">
+          <label>Success URL <span class="hint">- supports placeholders: {cardToken}, {cardType}, etc.</span></label>
+          <input type="text" id="accountSuccessUrl" placeholder="https://your-domain.com/success?token={cardToken}">
+        </div>
+        <div class="form-group full-width">
+          <label>Failure URL</label>
+          <input type="text" id="accountFailureUrl" placeholder="https://your-domain.com/failure">
+        </div>
+        <div class="form-group full-width">
+          <label>CSS Themes <span class="hint">- one per line, first is default</span></label>
+          <textarea id="accountCssThemes" placeholder="default&#10;pciBookingForm:white&#10;pciBookingForm:dark&#10;boutiquesirenuse"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAccountModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==================== DATA STORAGE ====================
 const STORAGE_KEYS = {
   results: 'pci-test-results',
   config: 'pci-test-config',
-  environment: 'pci-test-env'
+  environment: 'pci-test-env',
+  accounts: 'pci-accounts'
 };
 
 function getTestResults() {
@@ -280,6 +413,163 @@ function getEnvironment() {
 
 function setEnvironment(env) {
   localStorage.setItem(STORAGE_KEYS.environment, env);
+}
+
+function getAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.accounts) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveAccounts(accounts) {
+  localStorage.setItem(STORAGE_KEYS.accounts, JSON.stringify(accounts));
+}
+
+// ==================== ACCOUNT MANAGEMENT ====================
+let currentFilter = 'all';
+let editingAccountId = null;
+
+function renderAccounts() {
+  const accounts = getAccounts();
+  const filtered = currentFilter === 'all' ? accounts : accounts.filter(a => a.environment === currentFilter);
+  const container = document.getElementById('accountList');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding: 30px;">
+        <div class="empty-state-icon">👤</div>
+        <div class="empty-state-text">No accounts ${currentFilter !== 'all' ? 'for this environment' : 'configured'}.</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(account => `
+    <div class="account-item" data-id="${account.id}">
+      <div class="account-header">
+        <span class="account-name">${account.name}</span>
+        <span class="account-env ${account.environment}">${getEnvLabel(account.environment)}</span>
+      </div>
+      <div class="account-details">
+        <div>Brand: ${account.brand || '-'}</div>
+        <div>CSS: ${(account.cssThemes || []).length} theme(s)</div>
+      </div>
+      <div class="account-actions">
+        <button class="btn-use" onclick="useAccount('${account.id}')">Use in Tests</button>
+        <button class="btn-edit" onclick="editAccount('${account.id}')">Edit</button>
+        <button class="btn-delete" onclick="deleteAccount('${account.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getEnvLabel(env) {
+  const labels = { plan: 'Developer', qa: 'QA', pilot: 'Staging', prod: 'Production' };
+  return labels[env] || env;
+}
+
+function filterAccounts(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === filter);
+  });
+  renderAccounts();
+}
+
+function openAccountModal(accountId = null) {
+  editingAccountId = accountId;
+  document.getElementById('modalTitle').textContent = accountId ? 'Edit Account' : 'Add Account';
+
+  if (accountId) {
+    const account = getAccounts().find(a => a.id === accountId);
+    if (account) {
+      document.getElementById('accountId').value = account.id;
+      document.getElementById('accountName').value = account.name || '';
+      document.getElementById('accountEnv').value = account.environment || 'pilot';
+      document.getElementById('accountApiKey').value = account.apiKey || '';
+      document.getElementById('accountBrand').value = account.brand || '';
+      document.getElementById('accountMerchantName').value = account.merchantName || '';
+      document.getElementById('accountSuccessUrl').value = account.successUrl || '';
+      document.getElementById('accountFailureUrl').value = account.failureUrl || '';
+      document.getElementById('accountCssThemes').value = (account.cssThemes || []).join('\n');
+    }
+  } else {
+    document.getElementById('accountId').value = '';
+    document.getElementById('accountName').value = '';
+    document.getElementById('accountEnv').value = getEnvironment();
+    document.getElementById('accountApiKey').value = '';
+    document.getElementById('accountBrand').value = '';
+    document.getElementById('accountMerchantName').value = '';
+    document.getElementById('accountSuccessUrl').value = '';
+    document.getElementById('accountFailureUrl').value = '';
+    document.getElementById('accountCssThemes').value = '';
+  }
+
+  document.getElementById('accountModal').classList.add('show');
+}
+
+function closeAccountModal() {
+  document.getElementById('accountModal').classList.remove('show');
+  editingAccountId = null;
+}
+
+function saveAccount() {
+  const name = document.getElementById('accountName').value.trim();
+  if (!name) {
+    alert('Please enter an account name');
+    return;
+  }
+
+  const accounts = getAccounts();
+  const accountData = {
+    id: editingAccountId || 'acc_' + Date.now(),
+    name: name,
+    environment: document.getElementById('accountEnv').value,
+    apiKey: document.getElementById('accountApiKey').value.trim(),
+    brand: document.getElementById('accountBrand').value.trim(),
+    merchantName: document.getElementById('accountMerchantName').value.trim(),
+    successUrl: document.getElementById('accountSuccessUrl').value.trim(),
+    failureUrl: document.getElementById('accountFailureUrl').value.trim(),
+    cssThemes: document.getElementById('accountCssThemes').value.split('\n').map(s => s.trim()).filter(s => s)
+  };
+
+  if (editingAccountId) {
+    const index = accounts.findIndex(a => a.id === editingAccountId);
+    if (index !== -1) {
+      accounts[index] = accountData;
+    }
+  } else {
+    accounts.push(accountData);
+  }
+
+  saveAccounts(accounts);
+  closeAccountModal();
+  renderAccounts();
+}
+
+function editAccount(id) {
+  openAccountModal(id);
+}
+
+function deleteAccount(id) {
+  if (!confirm('Are you sure you want to delete this account?')) return;
+
+  const accounts = getAccounts().filter(a => a.id !== id);
+  saveAccounts(accounts);
+  renderAccounts();
+}
+
+function useAccount(id) {
+  const account = getAccounts().find(a => a.id === id);
+  if (!account) return;
+
+  // Store selected account for use in capture-test
+  localStorage.setItem('pci-selected-account', JSON.stringify(account));
+
+  // Navigate to capture test
+  window.location.href = 'capture-test.html?account=' + id;
 }
 
 // ==================== STATISTICS ====================
@@ -425,6 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateStatistics();
   renderRecentTests();
   renderFailedScenarios();
+  renderAccounts();
 
   const currentEnv = getEnvironment();
   document.querySelectorAll('.env-btn').forEach(btn => {
@@ -446,6 +737,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       renderRecentTests(btn.dataset.period);
     });
+  });
+
+  // Close modal on overlay click
+  document.getElementById('accountModal').addEventListener('click', (e) => {
+    if (e.target.id === 'accountModal') closeAccountModal();
   });
 });
 </script>

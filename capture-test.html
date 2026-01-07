@@ -146,6 +146,20 @@
     </div>
     <div class="card-body">
       <div class="config-grid" id="configGrid">
+        <div class="section-title">Account Selection</div>
+        <div class="form-group half-width">
+          <label>Select Account <span class="hint">- predefined from Dashboard</span></label>
+          <select id="accountSelector" onchange="loadSelectedAccount()">
+            <option value="">-- Select Account --</option>
+          </select>
+        </div>
+        <div class="form-group half-width">
+          <label>CSS Theme <span class="hint">- from account</span></label>
+          <select id="css">
+            <option value="">Default</option>
+          </select>
+        </div>
+
         <div class="section-title">Environment & Authentication</div>
         <div class="form-group">
           <label>Environment</label>
@@ -177,10 +191,6 @@
         <div class="form-group">
           <label>Language</label>
           <input type="text" id="language" value="en">
-        </div>
-        <div class="form-group">
-          <label>CSS Theme</label>
-          <input type="text" id="css" value="boutiquesirenuse">
         </div>
         <div class="form-group">
           <label>Merchant Name</label>
@@ -416,11 +426,121 @@ let state = {
 const iframe = document.getElementById('iframePayment');
 const wrapper = document.getElementById('iframeWrapper');
 
+// ==================== ACCOUNT MANAGEMENT ====================
+function getAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem('pci-accounts') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function populateAccountSelector() {
+  const accounts = getAccounts();
+  const selector = document.getElementById('accountSelector');
+
+  // Clear existing options except the first
+  selector.innerHTML = '<option value="">-- Select Account --</option>';
+
+  // Group accounts by environment
+  const envLabels = {
+    plan: 'Developer',
+    qa: 'QA',
+    pilot: 'Staging',
+    prod: 'Production'
+  };
+
+  const grouped = {};
+  accounts.forEach(acc => {
+    const env = acc.environment || 'pilot';
+    if (!grouped[env]) grouped[env] = [];
+    grouped[env].push(acc);
+  });
+
+  // Add optgroups
+  Object.keys(envLabels).forEach(env => {
+    if (grouped[env] && grouped[env].length > 0) {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = envLabels[env];
+      grouped[env].forEach(acc => {
+        const option = document.createElement('option');
+        option.value = acc.id;
+        option.textContent = acc.name;
+        optgroup.appendChild(option);
+      });
+      selector.appendChild(optgroup);
+    }
+  });
+}
+
+function loadSelectedAccount() {
+  const selector = document.getElementById('accountSelector');
+  const accountId = selector.value;
+
+  if (!accountId) {
+    // Clear CSS dropdown to default
+    const cssSelect = document.getElementById('css');
+    cssSelect.innerHTML = '<option value="">Default</option>';
+    return;
+  }
+
+  const account = getAccounts().find(a => a.id === accountId);
+  if (!account) return;
+
+  // Map environment to URL
+  const envUrls = {
+    plan: 'https://service-plan.pcibooking.net',
+    qa: 'https://service-qa.pcibooking.net',
+    pilot: 'https://service-pilot.pcibooking.net',
+    prod: 'https://service.pcibooking.net'
+  };
+
+  // Set environment
+  if (account.environment && envUrls[account.environment]) {
+    document.getElementById('environment').value = envUrls[account.environment];
+  }
+
+  // Set fields from account
+  if (account.apiKey) document.getElementById('apiKey').value = account.apiKey;
+  if (account.brand) document.getElementById('brand').value = account.brand;
+  if (account.merchantName) document.getElementById('merchantName').value = account.merchantName;
+  if (account.successUrl) document.getElementById('success').value = account.successUrl;
+  if (account.failureUrl) document.getElementById('failure').value = account.failureUrl;
+
+  // Populate CSS themes dropdown
+  const cssSelect = document.getElementById('css');
+  cssSelect.innerHTML = '<option value="">Default</option>';
+  if (account.cssThemes && account.cssThemes.length > 0) {
+    account.cssThemes.forEach((theme, index) => {
+      const option = document.createElement('option');
+      option.value = theme;
+      option.textContent = theme;
+      if (index === 0) option.selected = true;
+      cssSelect.appendChild(option);
+    });
+  }
+
+  log('Loaded account: ' + account.name, 'success');
+}
+
+function checkUrlForAccount() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const accountId = urlParams.get('account');
+
+  if (accountId) {
+    const selector = document.getElementById('accountSelector');
+    selector.value = accountId;
+    loadSelectedAccount();
+  }
+}
+
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', () => {
+  populateAccountSelector();
   renderScenarios();
   setupPostMessageListener();
   loadSavedConfigSilent();
+  checkUrlForAccount();
   log('Page loaded - Select a test scenario', 'info');
 });
 
