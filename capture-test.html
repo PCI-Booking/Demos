@@ -175,12 +175,36 @@
           <input type="text" id="apiKey" value="f00bcd3c278b4c778c9f4e54796eb070">
         </div>
         <div class="form-group">
+          <label>Auth Method</label>
+          <select id="authMethod" onchange="toggleAuthMethod()">
+            <option value="sessionToken" selected>Session Token</option>
+            <option value="accessToken">Access Token</option>
+          </select>
+        </div>
+        <!-- Session Token Section -->
+        <div class="form-group auth-session" id="authSessionSection">
           <label>Session Token</label>
           <input type="text" id="sessionToken" value="" placeholder="Click Generate">
         </div>
-        <div class="form-group">
+        <div class="form-group auth-session" id="authSessionBtn">
           <label>&nbsp;</label>
           <button class="btn btn-primary btn-sm" onclick="generateSessionToken()" style="width:100%">Generate Token</button>
+        </div>
+        <!-- Access Token Section -->
+        <div class="form-group half-width auth-access" id="authAccessSection" style="display:none;">
+          <label>Access Token <span class="hint">- RSA encrypted, paste from server</span></label>
+          <input type="text" id="accessToken" value="" placeholder="Paste encrypted access token">
+        </div>
+        <div class="form-group half-width auth-access" id="authAccessHelper" style="display:none;">
+          <label>Data Block Preview <span class="hint">- before encryption</span></label>
+          <input type="text" id="accessTokenPreview" readonly placeholder="APIKey/#GUID/#ExpiryTime" style="background:#f5f5f5; font-family:monospace; font-size:10px;">
+        </div>
+        <div class="form-group full-width auth-access" id="authAccessInfo" style="display:none;">
+          <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:12px; font-size:11px; color:#856404;">
+            <strong>Access Token Generation:</strong> The data block format is <code style="background:#333;color:#fdb913;padding:2px 6px;border-radius:3px;">APIKey/#GUID/#ExpiryTime</code>.
+            This must be RSA encrypted with PCI Booking's certificate on your server.
+            <button class="btn btn-sm" onclick="generateAccessTokenPreview()" style="margin-left:10px; padding:4px 10px; background:#fdb913; border:none; border-radius:4px; font-weight:600; cursor:pointer;">Preview Data Block</button>
+          </div>
         </div>
 
         <div class="section-title">Required Parameters</div>
@@ -621,8 +645,14 @@ function buildUrl() {
   const base = document.getElementById('environment').value + '/api/payments/capturecard';
   const params = new URLSearchParams();
 
+  // Get authentication token based on selected method
+  const auth = getAuthToken();
+  if (auth.value) {
+    params.set(auth.type, auth.value);
+  }
+
   const fields = [
-    'sessionToken', 'brand', 'language', 'css', 'cvv', 'autoDetectCardType',
+    'brand', 'language', 'css', 'cvv', 'autoDetectCardType',
     'ThreeDS', 'merchantName', 'amount', 'currencyCode', 'email',
     'submitWithPostMessage', 'useCustomValidation', 'postMessageHost',
     'success', 'failure', 'autoFocus', 'nameOnCardValidation'
@@ -637,6 +667,15 @@ function buildUrl() {
 }
 
 function loadIframe() {
+  // Validate authentication token
+  const auth = getAuthToken();
+  if (!auth.value) {
+    const methodName = auth.type === 'sessionToken' ? 'Session Token' : 'Access Token';
+    log('No ' + methodName + ' - generate or provide one first', 'warning');
+    showError('Authentication Required', 'Please generate a ' + methodName + ' before loading the iframe');
+    return;
+  }
+
   state.iframeReady = false;
   state.threeDsActive = false;
   wrapper.classList.remove('threeds-active');
@@ -646,7 +685,7 @@ function loadIframe() {
 
   const url = buildUrl();
   iframe.src = url;
-  updateStatus('processing', 'Loading iframe...');
+  updateStatus('processing', 'Loading iframe with ' + auth.type + '...');
   log('Loading: ' + url.substring(0, 80) + '...', 'info');
 }
 
@@ -802,7 +841,7 @@ function submitForm() {
   iframe.contentWindow.postMessage('submit', getPciHost());
 }
 
-// ==================== SESSION TOKEN ====================
+// ==================== AUTHENTICATION ====================
 async function generateSessionToken() {
   const apiKey = document.getElementById('apiKey').value.trim();
   if (!apiKey) {
@@ -827,9 +866,63 @@ async function generateSessionToken() {
   }
 }
 
+function toggleAuthMethod() {
+  const method = document.getElementById('authMethod').value;
+  const sessionElements = document.querySelectorAll('.auth-session');
+  const accessElements = document.querySelectorAll('.auth-access');
+
+  if (method === 'sessionToken') {
+    sessionElements.forEach(el => el.style.display = '');
+    accessElements.forEach(el => el.style.display = 'none');
+    log('Switched to Session Token authentication', 'info');
+  } else {
+    sessionElements.forEach(el => el.style.display = 'none');
+    accessElements.forEach(el => el.style.display = '');
+    log('Switched to Access Token authentication', 'info');
+    generateAccessTokenPreview();
+  }
+}
+
+function generateAccessTokenPreview() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    log('Enter API Key first to preview data block', 'warning');
+    return;
+  }
+
+  // Generate a GUID
+  const guid = generateGUID();
+
+  // Generate expiration time (10 minutes from now in ISO 8601 format)
+  const expiryTime = new Date(Date.now() + 10 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+  // Build the data block in PCI Booking format
+  const dataBlock = apiKey + '#' + guid + '#' + expiryTime;
+
+  document.getElementById('accessTokenPreview').value = dataBlock;
+  log('Data block preview generated (encrypt this on your server)', 'info');
+}
+
+function generateGUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function getAuthToken() {
+  const method = document.getElementById('authMethod').value;
+  if (method === 'sessionToken') {
+    return { type: 'sessionToken', value: document.getElementById('sessionToken').value };
+  } else {
+    return { type: 'accessToken', value: document.getElementById('accessToken').value };
+  }
+}
+
 // ==================== CONFIG SAVE/LOAD ====================
 const CONFIG_FIELDS = [
-  'environment', 'apiKey', 'brand', 'language', 'css', 'merchantName',
+  'environment', 'apiKey', 'authMethod', 'accessToken', 'brand', 'language', 'css', 'merchantName',
   'ThreeDS', 'amount', 'currencyCode', 'email', 'cvv', 'autoDetectCardType',
   'success', 'failure', 'submitWithPostMessage', 'useCustomValidation',
   'postMessageHost', 'autoFocus', 'nameOnCardValidation'
@@ -856,6 +949,10 @@ function loadSavedConfigSilent() {
       const el = document.getElementById(k);
       if (el) el.value = config[k];
     });
+    // Initialize auth method UI based on saved preference
+    if (config.authMethod) {
+      toggleAuthMethod();
+    }
   } catch(e) {}
 }
 
