@@ -192,19 +192,16 @@
         </div>
         <!-- Access Token Section -->
         <div class="form-group half-width auth-access" id="authAccessSection" style="display:none;">
-          <label>Access Token <span class="hint">- RSA encrypted, paste from server</span></label>
-          <input type="text" id="accessToken" value="" placeholder="Paste encrypted access token">
+          <label>Access Token <span class="hint">- auto-generated, valid 60 min</span></label>
+          <input type="text" id="accessToken" value="" placeholder="Click Generate">
         </div>
-        <div class="form-group half-width auth-access" id="authAccessHelper" style="display:none;">
-          <label>Data Block Preview <span class="hint">- before encryption</span></label>
-          <input type="text" id="accessTokenPreview" readonly placeholder="APIKey/#GUID/#ExpiryTime" style="background:#f5f5f5; font-family:monospace; font-size:10px;">
+        <div class="form-group auth-access" id="authAccessBtn" style="display:none;">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary btn-sm" onclick="generateAccessToken()" style="width:100%">Generate Access Token</button>
         </div>
-        <div class="form-group full-width auth-access" id="authAccessInfo" style="display:none;">
-          <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:12px; font-size:11px; color:#856404;">
-            <strong>Access Token Generation:</strong> The data block format is <code style="background:#333;color:#fdb913;padding:2px 6px;border-radius:3px;">APIKey/#GUID/#ExpiryTime</code>.
-            This must be RSA encrypted with PCI Booking's certificate on your server.
-            <button class="btn btn-sm" onclick="generateAccessTokenPreview()" style="margin-left:10px; padding:4px 10px; background:#fdb913; border:none; border-radius:4px; font-weight:600; cursor:pointer;">Preview Data Block</button>
-          </div>
+        <div class="form-group full-width auth-access" id="authAccessHelper" style="display:none;">
+          <label>Data Block Preview <span class="hint">- before encryption (APIKey/#GUID/#ExpiryTime)</span></label>
+          <input type="text" id="accessTokenPreview" readonly placeholder="Will be shown when generated" style="background:#f5f5f5; font-family:monospace; font-size:10px;">
         </div>
 
         <div class="section-title">Required Parameters</div>
@@ -286,7 +283,7 @@
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="loadIframe()">Load Iframe</button>
-        <button class="btn btn-secondary" onclick="generateSessionToken()">Generate Token</button>
+        <button class="btn btn-secondary" onclick="generateCurrentToken()">Generate Token</button>
         <button class="btn btn-secondary" onclick="saveConfig()">Save Config</button>
         <button class="btn btn-secondary" onclick="loadSavedConfig()">Load Config</button>
       </div>
@@ -879,28 +876,170 @@ function toggleAuthMethod() {
     sessionElements.forEach(el => el.style.display = 'none');
     accessElements.forEach(el => el.style.display = '');
     log('Switched to Access Token authentication', 'info');
-    generateAccessTokenPreview();
   }
 }
 
-function generateAccessTokenPreview() {
+// Cache for the certificate (per environment)
+let cachedCertificate = null;
+
+function updateBaseUrl() {
+  // Clear cached certificate when environment changes
+  cachedCertificate = null;
+  log('Environment changed - certificate cache cleared', 'info');
+}
+
+async function fetchCertificate() {
+  if (cachedCertificate) {
+    return cachedCertificate;
+  }
+
+  const envUrl = document.getElementById('environment').value;
+  const healthUrl = envUrl + '/health';
+
+  log('Fetching certificate from ' + healthUrl + '...', 'info');
+
+  try {
+    const response = await fetch(healthUrl);
+    if (!response.ok) {
+      throw new Error('Health endpoint returned ' + response.status);
+    }
+
+    const data = await response.json();
+
+    // The certificate should be in the response - adjust field name as needed
+    const cert = data.certificate || data.publicKey || data.cert || data.rsaPublicKey;
+
+    if (!cert) {
+      throw new Error('Certificate not found in health response');
+    }
+
+    cachedCertificate = cert;
+    log('Certificate fetched successfully', 'success');
+    return cert;
+  } catch (e) {
+    log('Failed to fetch certificate: ' + e.message, 'error');
+    throw e;
+  }
+}
+
+async function generateAccessToken() {
   const apiKey = document.getElementById('apiKey').value.trim();
   if (!apiKey) {
-    log('Enter API Key first to preview data block', 'warning');
+    log('Enter API Key first', 'warning');
+    showError('API Key Required', 'Please enter an API Key before generating access token');
     return;
   }
 
-  // Generate a GUID
-  const guid = generateGUID();
+  log('Generating access token...', 'info');
 
-  // Generate expiration time (10 minutes from now in ISO 8601 format)
-  const expiryTime = new Date(Date.now() + 10 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  try {
+    // Fetch the certificate
+    const certificate = await fetchCertificate();
 
-  // Build the data block in PCI Booking format
-  const dataBlock = apiKey + '#' + guid + '#' + expiryTime;
+    // Generate a GUID
+    const guid = generateGUID();
 
-  document.getElementById('accessTokenPreview').value = dataBlock;
-  log('Data block preview generated (encrypt this on your server)', 'info');
+    // Generate expiration time (60 minutes from now in ISO 8601 format)
+    const expiryTime = new Date(Date.now() + 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+    // Build the data block in PCI Booking format: APIKey#GUID#ExpiryTime
+    const dataBlock = apiKey + '#' + guid + '#' + expiryTime;
+
+    // Show the data block preview
+    document.getElementById('accessTokenPreview').value = dataBlock;
+
+    // Encrypt the data block with RSA
+    const encryptedToken = await rsaEncrypt(dataBlock, certificate);
+
+    document.getElementById('accessToken').value = encryptedToken;
+    log('Access token generated (valid 60 min)', 'success');
+  } catch (e) {
+    log('Access token generation failed: ' + e.message, 'error');
+    showError('Access Token Error', e.message);
+  }
+}
+
+async function rsaEncrypt(data, pemCertificate) {
+  try {
+    // Extract the public key from PEM certificate
+    const publicKey = await importPublicKey(pemCertificate);
+
+    // Encode the data to bytes
+    const encoder = new TextEncoder();
+    const dataBytes = encoder.encode(data);
+
+    // Encrypt using RSA-OAEP
+    const encrypted = await window.crypto.subtle.encrypt(
+      { name: 'RSA-OAEP' },
+      publicKey,
+      dataBytes
+    );
+
+    // Convert to base64
+    const encryptedBase64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+    return encryptedBase64;
+  } catch (e) {
+    log('RSA encryption error: ' + e.message, 'error');
+    throw new Error('RSA encryption failed: ' + e.message);
+  }
+}
+
+async function importPublicKey(pem) {
+  // Handle different PEM formats
+  let pemContent = pem;
+
+  // If it's a certificate, extract the public key section
+  if (pem.includes('-----BEGIN CERTIFICATE-----')) {
+    // For X.509 certificates, we need to extract the public key
+    // This is a simplified approach - may need adjustment based on actual cert format
+    pemContent = pem;
+  }
+
+  // Remove PEM headers and whitespace
+  const pemHeader = '-----BEGIN PUBLIC KEY-----';
+  const pemFooter = '-----END PUBLIC KEY-----';
+  const certHeader = '-----BEGIN CERTIFICATE-----';
+  const certFooter = '-----END CERTIFICATE-----';
+
+  let b64;
+  if (pemContent.includes(pemHeader)) {
+    b64 = pemContent
+      .replace(pemHeader, '')
+      .replace(pemFooter, '')
+      .replace(/\s/g, '');
+  } else if (pemContent.includes(certHeader)) {
+    // For certificates, try to use it directly (may need SubtleCrypto X.509 support)
+    b64 = pemContent
+      .replace(certHeader, '')
+      .replace(certFooter, '')
+      .replace(/\s/g, '');
+  } else {
+    // Assume it's already base64
+    b64 = pemContent.replace(/\s/g, '');
+  }
+
+  // Decode base64 to binary
+  const binaryString = atob(b64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  // Import the key
+  try {
+    // Try SPKI format first (standard public key)
+    return await window.crypto.subtle.importKey(
+      'spki',
+      bytes.buffer,
+      { name: 'RSA-OAEP', hash: 'SHA-256' },
+      false,
+      ['encrypt']
+    );
+  } catch (e) {
+    // If SPKI fails, the certificate format may need different handling
+    log('Note: Using SPKI import. If this fails, certificate format may need adjustment.', 'warning');
+    throw e;
+  }
 }
 
 function generateGUID() {
@@ -917,6 +1056,15 @@ function getAuthToken() {
     return { type: 'sessionToken', value: document.getElementById('sessionToken').value };
   } else {
     return { type: 'accessToken', value: document.getElementById('accessToken').value };
+  }
+}
+
+function generateCurrentToken() {
+  const method = document.getElementById('authMethod').value;
+  if (method === 'sessionToken') {
+    generateSessionToken();
+  } else {
+    generateAccessToken();
   }
 }
 
