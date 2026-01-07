@@ -941,8 +941,10 @@ async function generateAccessToken() {
     // Generate a GUID
     const guid = generateGUID();
 
-    // Generate expiration time (60 minutes from now in ISO 8601 format)
-    const expiryTime = new Date(Date.now() + 60 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+    // Generate expiration time (60 minutes from now in ISO 8601 "o" format matching C#)
+    const expiryDate = new Date(Date.now() + 60 * 60 * 1000);
+    // C# ToString("o") format: 2026-01-07T16:45:00.0000000Z
+    const expiryTime = expiryDate.toISOString().replace(/\.\d{3}Z$/, '.0000000Z');
 
     // Build the data block in PCI Booking format: APIKey#GUID#ExpiryTime
     const dataBlock = apiKey + '#' + guid + '#' + expiryTime;
@@ -969,12 +971,15 @@ function rsaEncrypt(data, pemCertificate) {
     // Get the public key from the certificate
     const publicKey = cert.publicKey;
 
-    // Encrypt using RSA PKCS#1 v1.5 (standard for PCI Booking)
+    // Encrypt using RSA PKCS#1 v1.5 (false = PKCS1, true = OAEP)
     const encrypted = publicKey.encrypt(data, 'RSAES-PKCS1-V1_5');
 
-    // Convert to base64
-    const encryptedBase64 = forge.util.encode64(encrypted);
-    return encryptedBase64;
+    // Convert to uppercase HEX string (matching C# implementation)
+    let hexString = '';
+    for (let i = 0; i < encrypted.length; i++) {
+      hexString += ('0' + encrypted.charCodeAt(i).toString(16)).slice(-2).toUpperCase();
+    }
+    return hexString;
   } catch (e) {
     log('RSA encryption error: ' + e.message, 'error');
     throw new Error('RSA encryption failed: ' + e.message);
@@ -982,7 +987,8 @@ function rsaEncrypt(data, pemCertificate) {
 }
 
 function generateGUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  // Generate GUID without dashes (matching C# Guid.NewGuid().ToString().Replace("-",""))
+  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
