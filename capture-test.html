@@ -879,13 +879,15 @@ function toggleAuthMethod() {
   }
 }
 
-// Cache for the certificate (per environment)
+// Cache for the certificate
 let cachedCertificate = null;
 
+// Certificate URL - stored locally in repo
+const CERT_URL = 'certs/pcibooking.pem';
+
 function updateBaseUrl() {
-  // Clear cached certificate when environment changes
-  cachedCertificate = null;
-  log('Environment changed - certificate cache cleared', 'info');
+  // Certificate is the same for all environments
+  log('Environment changed', 'info');
 }
 
 async function fetchCertificate() {
@@ -893,31 +895,29 @@ async function fetchCertificate() {
     return cachedCertificate;
   }
 
-  const envUrl = document.getElementById('environment').value;
-  const healthUrl = envUrl + '/health';
+  // Build the certificate URL relative to current page location
+  const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const certUrl = baseUrl + CERT_URL;
 
-  log('Fetching certificate from ' + healthUrl + '...', 'info');
+  log('Loading certificate...', 'info');
 
   try {
-    const response = await fetch(healthUrl);
+    const response = await fetch(certUrl);
     if (!response.ok) {
-      throw new Error('Health endpoint returned ' + response.status);
+      throw new Error('Certificate fetch returned ' + response.status);
     }
 
-    const data = await response.json();
+    const cert = await response.text();
 
-    // The certificate should be in the response - adjust field name as needed
-    const cert = data.certificate || data.publicKey || data.cert || data.rsaPublicKey;
-
-    if (!cert) {
-      throw new Error('Certificate not found in health response');
+    if (!cert || !cert.includes('BEGIN CERTIFICATE')) {
+      throw new Error('Invalid certificate format');
     }
 
     cachedCertificate = cert;
-    log('Certificate fetched successfully', 'success');
+    log('Certificate loaded successfully', 'success');
     return cert;
   } catch (e) {
-    log('Failed to fetch certificate: ' + e.message, 'error');
+    log('Failed to load certificate: ' + e.message, 'error');
     throw e;
   }
 }
@@ -961,14 +961,14 @@ async function generateAccessToken() {
 
 async function rsaEncrypt(data, pemCertificate) {
   try {
-    // Extract the public key from PEM certificate
-    const publicKey = await importPublicKey(pemCertificate);
+    // Extract the public key from X.509 certificate
+    const publicKey = await importPublicKeyFromCert(pemCertificate);
 
     // Encode the data to bytes
     const encoder = new TextEncoder();
     const dataBytes = encoder.encode(data);
 
-    // Encrypt using RSA-OAEP
+    // Encrypt using RSA-OAEP with SHA-1 (common for PCI Booking)
     const encrypted = await window.crypto.subtle.encrypt(
       { name: 'RSA-OAEP' },
       publicKey,
@@ -984,62 +984,108 @@ async function rsaEncrypt(data, pemCertificate) {
   }
 }
 
-async function importPublicKey(pem) {
-  // Handle different PEM formats
-  let pemContent = pem;
+async function importPublicKeyFromCert(pem) {
+  // Remove PEM headers and decode base64
+  const b64 = pem
+    .replace('-----BEGIN CERTIFICATE-----', '')
+    .replace('-----END CERTIFICATE-----', '')
+    .replace(/\s/g, '');
 
-  // If it's a certificate, extract the public key section
-  if (pem.includes('-----BEGIN CERTIFICATE-----')) {
-    // For X.509 certificates, we need to extract the public key
-    // This is a simplified approach - may need adjustment based on actual cert format
-    pemContent = pem;
-  }
-
-  // Remove PEM headers and whitespace
-  const pemHeader = '-----BEGIN PUBLIC KEY-----';
-  const pemFooter = '-----END PUBLIC KEY-----';
-  const certHeader = '-----BEGIN CERTIFICATE-----';
-  const certFooter = '-----END CERTIFICATE-----';
-
-  let b64;
-  if (pemContent.includes(pemHeader)) {
-    b64 = pemContent
-      .replace(pemHeader, '')
-      .replace(pemFooter, '')
-      .replace(/\s/g, '');
-  } else if (pemContent.includes(certHeader)) {
-    // For certificates, try to use it directly (may need SubtleCrypto X.509 support)
-    b64 = pemContent
-      .replace(certHeader, '')
-      .replace(certFooter, '')
-      .replace(/\s/g, '');
-  } else {
-    // Assume it's already base64
-    b64 = pemContent.replace(/\s/g, '');
-  }
-
-  // Decode base64 to binary
   const binaryString = atob(b64);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
 
-  // Import the key
-  try {
-    // Try SPKI format first (standard public key)
-    return await window.crypto.subtle.importKey(
-      'spki',
-      bytes.buffer,
-      { name: 'RSA-OAEP', hash: 'SHA-256' },
-      false,
-      ['encrypt']
-    );
-  } catch (e) {
-    // If SPKI fails, the certificate format may need different handling
-    log('Note: Using SPKI import. If this fails, certificate format may need adjustment.', 'warning');
-    throw e;
+  // Extract SubjectPublicKeyInfo from X.509 certificate using ASN.1 parsing
+  const spki = extractSPKIFromCert(bytes);
+
+  // Import the SPKI public key
+  return await window.crypto.subtle.importKey(
+    'spki',
+    spki.buffer,
+    { name: 'RSA-OAEP', hash: 'SHA-1' },
+    false,
+    ['encrypt']
+  );
+}
+
+// ASN.1 DER parser to extract SubjectPublicKeyInfo from X.509 certificate
+function extractSPKIFromCert(certBytes) {
+  let offset = 0;
+
+  // Helper to read ASN.1 tag and length
+  function readTagLength() {
+    const tag = certBytes[offset++];
+    let length = certBytes[offset++];
+
+    if (length & 0x80) {
+      const numBytes = length & 0x7f;
+      length = 0;
+      for (let i = 0; i < numBytes; i++) {
+        length = (length << 8) | certBytes[offset++];
+      }
+    }
+    return { tag, length };
   }
+
+  // Skip to content of a SEQUENCE
+  function enterSequence() {
+    const { tag, length } = readTagLength();
+    if (tag !== 0x30) throw new Error('Expected SEQUENCE at offset ' + (offset - 2));
+    return length;
+  }
+
+  // Skip a field
+  function skipField() {
+    const { tag, length } = readTagLength();
+    offset += length;
+  }
+
+  // Read field and return its bytes
+  function readField() {
+    const start = offset;
+    const { tag, length } = readTagLength();
+    const end = offset + length;
+    offset = end;
+    return certBytes.slice(start, end);
+  }
+
+  // Parse X.509 certificate structure:
+  // Certificate ::= SEQUENCE {
+  //   tbsCertificate       TBSCertificate,
+  //   signatureAlgorithm   AlgorithmIdentifier,
+  //   signatureValue       BIT STRING
+  // }
+  enterSequence(); // Certificate
+
+  // TBSCertificate ::= SEQUENCE {
+  //   version         [0] EXPLICIT Version DEFAULT v1,
+  //   serialNumber         CertificateSerialNumber,
+  //   signature            AlgorithmIdentifier,
+  //   issuer               Name,
+  //   validity             Validity,
+  //   subject              Name,
+  //   subjectPublicKeyInfo SubjectPublicKeyInfo,
+  //   ...
+  // }
+  enterSequence(); // TBSCertificate
+
+  // Skip version if present (context tag [0])
+  if (certBytes[offset] === 0xa0) {
+    skipField();
+  }
+
+  skipField(); // serialNumber
+  skipField(); // signature (AlgorithmIdentifier)
+  skipField(); // issuer (Name)
+  skipField(); // validity
+  skipField(); // subject (Name)
+
+  // Now we're at SubjectPublicKeyInfo - read it completely
+  const spki = readField();
+
+  return spki;
 }
 
 function generateGUID() {
