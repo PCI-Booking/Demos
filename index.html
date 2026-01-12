@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PCI Booking - Demo & Test Suite</title>
+<!-- Forge library for RSA PKCS#1 v1.5 encryption (access token generation) -->
+<script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 20px; }
@@ -433,10 +435,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <div class="form-group half-width">
             <label>Environment</label>
             <select id="fcEnvironment" onchange="fcUpdateBaseUrl()">
-              <option value="https://service-plan.pcibooking.net">Developer</option>
-              <option value="https://service-qa.pcibooking.net">QA</option>
-              <option value="https://service-pilot.pcibooking.net" selected>Staging</option>
-              <option value="https://service.pcibooking.net">Production</option>
+              <option value="https://service-plan.pcibooking.net">Developer (service-plan.pcibooking.net)</option>
+              <option value="https://service-qa.pcibooking.net">QA (service-qa.pcibooking.net)</option>
+              <option value="https://service-pilot.pcibooking.net" selected>Staging (service-pilot.pcibooking.net)</option>
+              <option value="https://service.pcibooking.net">Production (service.pcibooking.net)</option>
             </select>
           </div>
           <div class="form-group half-width">
@@ -444,140 +446,141 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
             <input type="text" id="fcBaseUrl" value="https://service-pilot.pcibooking.net/api/payments/capturecard">
           </div>
 
-          <div class="section-title-config">Authentication</div>
+          <div class="section-title-config">Authentication (provide one)</div>
           <div class="form-group full-width">
-            <label>API Key <span class="hint">- for generating sessionToken</span></label>
+            <label>apiKey <span class="hint">- for generating sessionToken or accessToken</span></label>
             <div style="display: flex; gap: 8px;">
-              <input type="text" id="fcApiKey" value="f00bcd3c278b4c778c9f4e54796eb070" style="flex: 1;">
-              <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="fcGenerateSessionToken()">Generate</button>
+              <input type="text" id="fcApiKey" value="f00bcd3c278b4c778c9f4e54796eb070" placeholder="Enter your API Key" style="flex: 1;">
+              <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="fcGenerateSessionToken()">Session</button>
+              <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="fcGenerateAccessToken()">Access</button>
             </div>
           </div>
           <div class="form-group half-width">
-            <label>sessionToken <span class="hint">- valid 5 min</span></label>
+            <label>sessionToken <span class="hint">- string, valid 5 min</span></label>
             <input type="text" id="fcSessionToken" value="">
           </div>
           <div class="form-group half-width">
-            <label>accessToken</label>
+            <label>accessToken <span class="hint">- string, valid 60 min</span></label>
             <input type="text" id="fcAccessToken" value="">
           </div>
 
           <div class="section-title-config">Required Parameters</div>
           <div class="form-group half-width">
-            <label>brand <span class="hint">- required</span></label>
+            <label>brand <span class="hint">- string, required</span></label>
             <input type="text" id="fcBrand" value="ArekSandbox">
           </div>
           <div class="form-group half-width">
-            <label>language <span class="hint">- ISO 639-1</span></label>
+            <label>language <span class="hint">- string, required, ISO 639-1</span></label>
             <input type="text" id="fcLanguage" value="en">
           </div>
 
           <div class="section-title-config">Branding & Display</div>
           <div class="form-group half-width">
-            <label>css <span class="hint">- stylesheet name</span></label>
+            <label>css <span class="hint">- string, stylesheet name</span></label>
             <input type="text" id="fcCss" value="boutiquesirenuse">
           </div>
           <div class="form-group">
-            <label>removeBaseCss</label>
-            <select id="fcRemoveBaseCss"><option value="false" selected>false</option><option value="true">true</option></select>
+            <label>removeBaseCss <span class="hint">- boolean</span></label>
+            <select id="fcRemoveBaseCss"><option value="false" selected>false (default)</option><option value="true">true</option></select>
           </div>
 
           <div class="section-title-config">Card Input Settings</div>
           <div class="form-group">
-            <label>cvv</label>
-            <select id="fcCvv"><option value="false">false</option><option value="true" selected>true</option></select>
+            <label>cvv <span class="hint">- boolean</span></label>
+            <select id="fcCvv"><option value="false">false</option><option value="true" selected>true (default)</option></select>
           </div>
           <div class="form-group">
-            <label>autoDetectCardType</label>
-            <select id="fcAutoDetectCardType"><option value="false">false</option><option value="true" selected>true</option></select>
+            <label>autoDetectCardType <span class="hint">- boolean</span></label>
+            <select id="fcAutoDetectCardType"><option value="false">false</option><option value="true" selected>true (default)</option></select>
           </div>
           <div class="form-group">
-            <label>defaultCardType</label>
+            <label>defaultCardType <span class="hint">- string</span></label>
             <input type="text" id="fcDefaultCardType" value="" placeholder="e.g. visa">
           </div>
           <div class="form-group">
-            <label>cardTypes</label>
+            <label>cardTypes <span class="hint">- string, comma separated</span></label>
             <input type="text" id="fcCardTypes" value="" placeholder="visa,mastercard,amex">
           </div>
           <div class="form-group">
-            <label>minExpiration <span class="hint">- mmyyyy</span></label>
+            <label>minExpiration <span class="hint">- string, mmyyyy</span></label>
             <input type="text" id="fcMinExpiration" value="" placeholder="012025">
           </div>
           <div class="form-group">
-            <label>expirationMonths</label>
-            <select id="fcExpirationMonths"><option value="numbers" selected>numbers</option><option value="names">names</option></select>
+            <label>expirationMonths <span class="hint">- string</span></label>
+            <select id="fcExpirationMonths"><option value="numbers" selected>numbers (default)</option><option value="names">names</option></select>
           </div>
           <div class="form-group">
-            <label>showOwnerId</label>
-            <select id="fcShowOwnerId"><option value="false" selected>false</option><option value="true">true</option></select>
+            <label>showOwnerId <span class="hint">- string</span></label>
+            <select id="fcShowOwnerId"><option value="false" selected>false (default)</option><option value="true">true</option></select>
           </div>
           <div class="form-group">
-            <label>nameOnCardValidation</label>
+            <label>nameOnCardValidation <span class="hint">- string</span></label>
             <select id="fcNameOnCardValidation"><option value="">default</option><option value="NO_DIGITS">NO_DIGITS</option></select>
           </div>
           <div class="form-group">
-            <label>autoFocus</label>
-            <select id="fcAutoFocus"><option value="true" selected>true</option><option value="false">false</option></select>
+            <label>autoFocus <span class="hint">- boolean</span></label>
+            <select id="fcAutoFocus"><option value="true" selected>true (default)</option><option value="false">false</option></select>
           </div>
 
           <div class="section-title-config">Token Settings</div>
           <div class="form-group half-width">
-            <label>creatorReference</label>
+            <label>creatorReference <span class="hint">- string</span></label>
             <input type="text" id="fcCreatorReference" value="">
           </div>
           <div class="form-group">
-            <label>eliminateCardDuplication</label>
-            <select id="fcEliminateCardDuplication"><option value="">default</option><option value="true">true</option><option value="false">false</option></select>
+            <label>eliminateCardDuplication <span class="hint">- boolean</span></label>
+            <select id="fcEliminateCardDuplication"><option value="">default (new token)</option><option value="true">true</option><option value="false">false</option></select>
           </div>
 
-          <div class="section-title-config">3D Secure Settings</div>
+          <div class="section-title-config">3D Secure (3DS) Settings</div>
           <div class="form-group">
-            <label>ThreeDS</label>
-            <select id="fcThreeDS"><option value="false" selected>false</option><option value="true">true</option></select>
+            <label>ThreeDS <span class="hint">- boolean</span></label>
+            <select id="fcThreeDS"><option value="false" selected>false (default)</option><option value="true">true</option></select>
           </div>
           <div class="form-group">
-            <label>UnavailThreeDSAuth</label>
-            <select id="fcUnavailThreeDSAuth"><option value="Accept" selected>Accept</option><option value="Reject">Reject</option></select>
+            <label>UnavailThreeDSAuth <span class="hint">- string</span></label>
+            <select id="fcUnavailThreeDSAuth"><option value="Accept" selected>Accept (default)</option><option value="Reject">Reject</option></select>
           </div>
           <div class="form-group">
-            <label>merchantName</label>
+            <label>merchantName <span class="hint">- string</span></label>
             <input type="text" id="fcMerchantName" value="">
           </div>
           <div class="form-group">
-            <label>amount <span class="hint">- cents</span></label>
-            <input type="number" id="fcAmount" value="0">
+            <label>amount <span class="hint">- int32, in cents</span></label>
+            <input type="number" id="fcAmount" value="0" placeholder="0 (default)">
           </div>
           <div class="form-group">
-            <label>currencyCode</label>
-            <input type="text" id="fcCurrencyCode" value="EUR">
+            <label>currencyCode <span class="hint">- string, ISO 4217</span></label>
+            <input type="text" id="fcCurrencyCode" value="EUR" placeholder="EUR (default)">
           </div>
 
-          <div class="section-title-config">Visa 3DS Requirements</div>
+          <div class="section-title-config">Visa 3DS Requirements (provide at least one for 3DS)</div>
           <div class="form-group half-width">
-            <label>email <span class="hint">- cardholder email</span></label>
+            <label>email <span class="hint">- string, cardholder email</span></label>
             <input type="email" id="fcEmail" value="" placeholder="joe@bloggs.com">
           </div>
           <div class="form-group half-width">
-            <label>phone <span class="hint">- digits only</span></label>
+            <label>phone <span class="hint">- string, digits only</span></label>
             <input type="text" id="fcPhone" value="" placeholder="00353112223344">
           </div>
 
-          <div class="section-title-config">PostMessage Settings</div>
+          <div class="section-title-config">Form Submission & PostMessage</div>
           <div class="form-group">
-            <label>submitWithPostMessage</label>
-            <select id="fcSubmitWithPostMessage"><option value="">default</option><option value="true" selected>true</option><option value="false">false</option></select>
+            <label>submitWithPostMessage <span class="hint">- boolean</span></label>
+            <select id="fcSubmitWithPostMessage"><option value="">default</option><option value="true" selected>true (default)</option><option value="false">false</option></select>
           </div>
           <div class="form-group">
-            <label>useCustomValidation</label>
-            <select id="fcUseCustomValidation"><option value="false">false</option><option value="true" selected>true</option></select>
+            <label>useCustomValidation <span class="hint">- boolean</span></label>
+            <select id="fcUseCustomValidation"><option value="false">false (default)</option><option value="true" selected>true</option></select>
           </div>
           <div class="form-group half-width">
-            <label>postMessageHost <span class="hint">- parent domain</span></label>
+            <label>postMessageHost <span class="hint">- string, parent domain</span></label>
             <input type="text" id="fcPostMessageHost" value="https://raw.githack.com">
           </div>
 
-          <div class="section-title-config">Custom Validation Settings</div>
+          <div class="section-title-config">Custom Validation Settings (Error displayed OUTSIDE iframe)</div>
           <div class="form-group half-width">
-            <label>Validation Action <span class="hint">- for testing</span></label>
+            <label>Validation Action <span class="hint">- for testing custom validation</span></label>
             <select id="fcCustomValidationAction">
               <option value="accept" selected>Accept All Cards</option>
               <option value="reject">Reject All Cards</option>
@@ -587,17 +590,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
             </select>
           </div>
           <div class="form-group half-width">
-            <label>Rejection Message <span class="hint">- shown outside iframe</span></label>
+            <label>Rejection Message <span class="hint">- message shown to user OUTSIDE iframe</span></label>
             <input type="text" id="fcCustomValidationMessage" value="This card did not pass the validation">
           </div>
 
           <div class="section-title-config">Redirect URLs</div>
           <div class="form-group full-width">
-            <label>success <span class="hint">- placeholders: {cardToken}, {cardType}, {cardNumber}, {cvv}, {expiration}, {cardHolderName}, {threeDSecIndication}</span></label>
+            <label>success <span class="hint">- string, URL with placeholders: {cardToken}, {cardType}, {cardNumber}, {cvv}, {expiration}, {cardHolderName}, {threeDSecIndication}</span></label>
             <textarea id="fcSuccess" style="min-height: 50px; font-family: monospace; font-size: 11px;">https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}&cardNumber={cardNumber}&cvv={cvv}&expiration={expiration}&cardHolderName={cardHolderName}&threeDSecIndication={threeDSecIndication}</textarea>
           </div>
           <div class="form-group full-width">
-            <label>failure</label>
+            <label>failure <span class="hint">- string, URL</span></label>
             <input type="text" id="fcFailure" value="https://pcib2.free.beeceptor.com/failure">
           </div>
         </div>
@@ -1280,6 +1283,110 @@ async function fcGenerateSessionToken() {
     }
   } catch (e) {
     fcLog('Error: ' + e.message, 'error');
+  }
+}
+
+// ==================== ACCESS TOKEN GENERATION ====================
+let fcCachedCertificate = null;
+const FC_CERT_URL = 'certs/pcibooking.pem';
+
+async function fcFetchCertificate() {
+  if (fcCachedCertificate) {
+    return fcCachedCertificate;
+  }
+
+  // Build the certificate URL relative to current page location
+  const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const certUrl = baseUrl + FC_CERT_URL;
+
+  fcLog('Loading certificate...', 'info');
+
+  try {
+    const response = await fetch(certUrl);
+    if (!response.ok) {
+      throw new Error('Certificate fetch returned ' + response.status);
+    }
+
+    const cert = await response.text();
+
+    if (!cert || !cert.includes('BEGIN CERTIFICATE')) {
+      throw new Error('Invalid certificate format');
+    }
+
+    fcCachedCertificate = cert;
+    fcLog('Certificate loaded successfully', 'success');
+    return cert;
+  } catch (e) {
+    fcLog('Failed to load certificate: ' + e.message, 'error');
+    throw e;
+  }
+}
+
+function fcGenerateGUID() {
+  // Generate GUID without dashes (matching C# Guid.NewGuid().ToString().Replace("-",""))
+  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function fcRsaEncrypt(data, pemCertificate) {
+  try {
+    // Parse the X.509 certificate using forge
+    const cert = forge.pki.certificateFromPem(pemCertificate);
+
+    // Get the public key from the certificate
+    const publicKey = cert.publicKey;
+
+    // Encrypt using RSA PKCS#1 v1.5 (false = PKCS1, true = OAEP)
+    const encrypted = publicKey.encrypt(data, 'RSAES-PKCS1-V1_5');
+
+    // Convert to uppercase HEX string (matching C# implementation)
+    let hexString = '';
+    for (let i = 0; i < encrypted.length; i++) {
+      hexString += ('0' + encrypted.charCodeAt(i).toString(16)).slice(-2).toUpperCase();
+    }
+    return hexString;
+  } catch (e) {
+    fcLog('RSA encryption error: ' + e.message, 'error');
+    throw new Error('RSA encryption failed: ' + e.message);
+  }
+}
+
+async function fcGenerateAccessToken() {
+  const apiKey = document.getElementById('fcApiKey').value.trim();
+  if (!apiKey) {
+    fcLog('Please enter your API Key first', 'warning');
+    return;
+  }
+
+  fcLog('Generating access token...', 'info');
+
+  try {
+    // Fetch the certificate
+    const certificate = await fcFetchCertificate();
+
+    // Generate a GUID without dashes
+    const guid = fcGenerateGUID();
+
+    // Generate expiration time (60 minutes from now in ISO 8601 "o" format matching C#)
+    const expiryDate = new Date(Date.now() + 60 * 60 * 1000);
+    // C# ToString("o") format: 2026-01-07T16:45:00.0000000Z
+    const expiryTime = expiryDate.toISOString().replace(/\.\d{3}Z$/, '.0000000Z');
+
+    // Build the data block in PCI Booking format: APIKey#GUID#ExpiryTime
+    const dataBlock = apiKey + '#' + guid + '#' + expiryTime;
+
+    fcLog('Data block: ' + dataBlock.substring(0, 50) + '...', 'info');
+
+    // Encrypt the data block with RSA PKCS#1 v1.5
+    const encryptedToken = fcRsaEncrypt(dataBlock, certificate);
+
+    document.getElementById('fcAccessToken').value = encryptedToken;
+    fcLog('Access token generated (valid for 60 minutes)', 'success');
+  } catch (e) {
+    fcLog('Access token generation failed: ' + e.message, 'error');
   }
 }
 
