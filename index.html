@@ -381,7 +381,48 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
   <!-- Full Config Section -->
   <div id="fullConfigSection" style="display: none;">
+    <!-- Iframe Card - Now at Top -->
     <div class="card">
+      <div class="card-header"><h2>Card Capture Iframe</h2></div>
+      <div class="card-body">
+        <div id="fcCustomErrorMessage" class="custom-error-message">
+          <span class="error-icon">⚠️</span>
+          <div class="error-content">
+            <div class="error-title" id="fcErrorTitle">Error</div>
+            <div class="error-details" id="fcErrorDetails">-</div>
+          </div>
+          <button class="error-close" onclick="fcHideError()">×</button>
+        </div>
+        <div id="fcCustomSuccessMessage" class="custom-success-message">
+          <span class="error-icon">✅</span>
+          <div class="error-content">
+            <div class="error-title" id="fcSuccessTitle">Success</div>
+            <div class="error-details" id="fcSuccessDetails">-</div>
+          </div>
+        </div>
+        <div id="iframeWrapper">
+          <iframe id="iframePayment" src="about:blank" scrolling="no"></iframe>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div class="status-dot" id="fcStatusDot"></div>
+        <span class="status-text" id="fcStatusText">Click "Load Iframe" to start</span>
+        <div class="fc-action-buttons">
+          <button class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;" onclick="fcLoadIframe()">▶ Load Iframe</button>
+          <button class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;" onclick="fcValidateForm()">Validate</button>
+          <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;" onclick="fcSubmitForm()">Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Panel - Now at Top -->
+    <div class="log-panel">
+      <div class="log-header"><span>PostMessage Log</span><button class="clear-btn" onclick="fcClearLog()">Clear</button></div>
+      <div class="log-content" id="fcLogContent"></div>
+    </div>
+
+    <!-- Configuration Card - Now Below -->
+    <div class="card" style="margin-top: 20px;">
       <div class="card-header">
         <h2>⚙️ Full Configuration</h2>
         <button class="collapse-btn" onclick="toggleFullConfig()">Show/Hide</button>
@@ -571,43 +612,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <button class="btn btn-secondary" onclick="fcResetConfig()">Reset</button>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h2>Card Capture Iframe</h2></div>
-      <div class="card-body">
-        <div id="fcCustomErrorMessage" class="custom-error-message">
-          <span class="error-icon">⚠️</span>
-          <div class="error-content">
-            <div class="error-title" id="fcErrorTitle">Error</div>
-            <div class="error-details" id="fcErrorDetails">-</div>
-          </div>
-          <button class="error-close" onclick="fcHideError()">×</button>
-        </div>
-        <div id="fcCustomSuccessMessage" class="custom-success-message">
-          <span class="error-icon">✅</span>
-          <div class="error-content">
-            <div class="error-title" id="fcSuccessTitle">Success</div>
-            <div class="error-details" id="fcSuccessDetails">-</div>
-          </div>
-        </div>
-        <div id="iframeWrapper">
-          <iframe id="iframePayment" src="about:blank" scrolling="no"></iframe>
-        </div>
-      </div>
-      <div class="status-bar">
-        <div class="status-dot" id="fcStatusDot"></div>
-        <span class="status-text" id="fcStatusText">Click "Load Iframe" to start</span>
-        <div class="fc-action-buttons">
-          <button class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;" onclick="fcValidateForm()">Validate</button>
-          <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;" onclick="fcSubmitForm()">Submit</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="log-panel">
-      <div class="log-header"><span>PostMessage Log</span><button class="clear-btn" onclick="fcClearLog()">Clear</button></div>
-      <div class="log-content" id="fcLogContent"></div>
     </div>
   </div><!-- End Full Config Section -->
 
