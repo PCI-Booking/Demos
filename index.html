@@ -158,6 +158,49 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   .nav-title { width: 100%; text-align: center; margin-bottom: 8px; }
   .account-form { grid-template-columns: 1fr; }
 }
+
+/* Full Config Styles */
+.config-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.config-grid.collapsed { display: none; }
+.section-title-config { font-size: 11px; font-weight: 700; color: #333; margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #fdb913; grid-column: 1 / -1; text-transform: uppercase; }
+.form-group select { background-color: #fffbe6; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer; }
+.url-input { background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 11px; word-break: break-all; min-height: 70px; width: 100%; resize: vertical; margin-top: 8px; }
+.url-input:focus { outline: none; border-color: #fdb913; box-shadow: 0 0 0 2px rgba(253,185,19,0.2); }
+#iframeWrapper { width: 100%; background: #fff; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; transition: all 0.3s; position: relative; }
+#iframeWrapper.threeds-active { border-color: #fdb913; border-width: 2px; box-shadow: 0 0 15px rgba(253, 185, 19, 0.3); }
+#iframePayment { display: block; width: 100%; border: 0; transition: height 0.3s ease; }
+.custom-error-message { display: none; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); color: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; animation: slideDown 0.3s ease-out; }
+.custom-error-message.show { display: flex; align-items: center; gap: 12px; }
+.custom-success-message { display: none; background: linear-gradient(135deg, #4caf50 0%, #43a047 100%); color: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; animation: slideDown 0.3s ease-out; }
+.custom-success-message.show { display: flex; align-items: center; gap: 12px; }
+.error-icon { font-size: 24px; }
+.error-content { flex: 1; }
+.error-title { font-weight: 700; margin-bottom: 4px; }
+.error-details { font-size: 13px; opacity: 0.9; }
+.error-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.status-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #f8f8f8; border-top: 1px solid #eee; flex-wrap: wrap; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+.status-dot.ready { background: #4caf50; }
+.status-dot.processing { background: #fdb913; animation: pulse 1s infinite; }
+.status-dot.threeds { background: #fdb913; animation: pulse 0.5s infinite; }
+.status-dot.error { background: #f44336; }
+@keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+.status-text { font-size: 13px; color: #666; }
+.fc-action-buttons { display: flex; gap: 8px; margin-left: auto; }
+.log-panel { background: #333; border-radius: 8px; overflow: hidden; margin-top: 20px; }
+.log-header { background: #222; color: white; padding: 10px 16px; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 2px solid #fdb913; }
+.log-content { padding: 12px 16px; max-height: 150px; overflow-y: auto; font-family: 'Monaco','Menlo',monospace; font-size: 11px; }
+.log-entry { color: #aaa; margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #555; word-break: break-all; }
+.log-entry.info { border-color: #fdb913; color: #fdb913; }
+.log-entry.success { border-color: #4caf50; color: #81c784; }
+.log-entry.warning { border-color: #ff9800; color: #ffb74d; }
+.log-entry.error { border-color: #f44336; color: #e57373; }
+.log-entry .time { color: #777; margin-right: 8px; }
+.clear-btn { background: transparent; border: 1px solid #fdb913; color: #fdb913; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.collapse-btn { background: #fdb913; border: none; color: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+@media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -165,12 +208,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <!-- Navigation -->
   <nav class="nav-bar">
     <span class="nav-title">PCI Booking Test Suite</span>
-    <a href="index.html" class="active">Dashboard</a>
+    <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
     <a href="capture-test.html">Card Capture</a>
     <a href="display-test.html">Card Display</a>
-    <a href="pci-booking.html">Full Config</a>
+    <a href="#fullconfig" onclick="showSection('fullconfig')">Full Config</a>
   </nav>
 
+  <!-- Dashboard Section -->
+  <div id="dashboardSection">
   <!-- Environment Selector -->
   <div class="env-selector">
     <button class="env-btn" data-env="plan">Developer</button>
@@ -332,6 +377,196 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
     </div>
   </div>
+  </div><!-- End Dashboard Section -->
+
+  <!-- Full Config Section -->
+  <div id="fullConfigSection" style="display: none;">
+    <div class="card">
+      <div class="card-header">
+        <h2>⚙️ Full Configuration</h2>
+        <button class="collapse-btn" onclick="toggleFullConfig()">Show/Hide</button>
+      </div>
+      <div class="card-body">
+        <div class="config-grid" id="configGrid">
+          <div class="section-title-config">Base Configuration</div>
+          <div class="form-group half-width">
+            <label>Environment</label>
+            <select id="fcEnvironment" onchange="fcUpdateBaseUrl()">
+              <option value="https://service-plan.pcibooking.net">Developer</option>
+              <option value="https://service-qa.pcibooking.net">QA</option>
+              <option value="https://service-pilot.pcibooking.net" selected>Staging</option>
+              <option value="https://service.pcibooking.net">Production</option>
+            </select>
+          </div>
+          <div class="form-group half-width">
+            <label>Base URL</label>
+            <input type="text" id="fcBaseUrl" value="https://service-pilot.pcibooking.net/api/payments/capturecard">
+          </div>
+
+          <div class="section-title-config">Authentication</div>
+          <div class="form-group full-width">
+            <label>API Key <span class="hint">- for generating sessionToken</span></label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="fcApiKey" value="f00bcd3c278b4c778c9f4e54796eb070" style="flex: 1;">
+              <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="fcGenerateSessionToken()">Generate</button>
+            </div>
+          </div>
+          <div class="form-group half-width">
+            <label>sessionToken <span class="hint">- valid 5 min</span></label>
+            <input type="text" id="fcSessionToken" value="">
+          </div>
+          <div class="form-group half-width">
+            <label>accessToken</label>
+            <input type="text" id="fcAccessToken" value="">
+          </div>
+
+          <div class="section-title-config">Required Parameters</div>
+          <div class="form-group half-width">
+            <label>brand <span class="hint">- required</span></label>
+            <input type="text" id="fcBrand" value="ArekSandbox">
+          </div>
+          <div class="form-group half-width">
+            <label>language <span class="hint">- ISO 639-1</span></label>
+            <input type="text" id="fcLanguage" value="en">
+          </div>
+
+          <div class="section-title-config">Branding & Display</div>
+          <div class="form-group half-width">
+            <label>css <span class="hint">- stylesheet name</span></label>
+            <input type="text" id="fcCss" value="boutiquesirenuse">
+          </div>
+          <div class="form-group">
+            <label>removeBaseCss</label>
+            <select id="fcRemoveBaseCss"><option value="false" selected>false</option><option value="true">true</option></select>
+          </div>
+
+          <div class="section-title-config">Card Input Settings</div>
+          <div class="form-group">
+            <label>cvv</label>
+            <select id="fcCvv"><option value="false">false</option><option value="true" selected>true</option></select>
+          </div>
+          <div class="form-group">
+            <label>autoDetectCardType</label>
+            <select id="fcAutoDetectCardType"><option value="false">false</option><option value="true" selected>true</option></select>
+          </div>
+          <div class="form-group">
+            <label>defaultCardType</label>
+            <input type="text" id="fcDefaultCardType" value="" placeholder="e.g. visa">
+          </div>
+          <div class="form-group">
+            <label>cardTypes</label>
+            <input type="text" id="fcCardTypes" value="" placeholder="visa,mastercard">
+          </div>
+          <div class="form-group">
+            <label>autoFocus</label>
+            <select id="fcAutoFocus"><option value="true" selected>true</option><option value="false">false</option></select>
+          </div>
+          <div class="form-group">
+            <label>nameOnCardValidation</label>
+            <select id="fcNameOnCardValidation"><option value="">default</option><option value="NO_DIGITS">NO_DIGITS</option></select>
+          </div>
+
+          <div class="section-title-config">3D Secure Settings</div>
+          <div class="form-group">
+            <label>ThreeDS</label>
+            <select id="fcThreeDS"><option value="false" selected>false</option><option value="true">true</option></select>
+          </div>
+          <div class="form-group">
+            <label>merchantName</label>
+            <input type="text" id="fcMerchantName" value="">
+          </div>
+          <div class="form-group">
+            <label>amount <span class="hint">- cents</span></label>
+            <input type="number" id="fcAmount" value="0">
+          </div>
+          <div class="form-group">
+            <label>currencyCode</label>
+            <input type="text" id="fcCurrencyCode" value="EUR">
+          </div>
+          <div class="form-group half-width">
+            <label>email</label>
+            <input type="email" id="fcEmail" value="" placeholder="joe@bloggs.com">
+          </div>
+          <div class="form-group half-width">
+            <label>phone</label>
+            <input type="text" id="fcPhone" value="" placeholder="00353112223344">
+          </div>
+
+          <div class="section-title-config">PostMessage Settings</div>
+          <div class="form-group">
+            <label>submitWithPostMessage</label>
+            <select id="fcSubmitWithPostMessage"><option value="true" selected>true</option><option value="false">false</option></select>
+          </div>
+          <div class="form-group">
+            <label>useCustomValidation</label>
+            <select id="fcUseCustomValidation"><option value="false">false</option><option value="true" selected>true</option></select>
+          </div>
+          <div class="form-group half-width">
+            <label>postMessageHost</label>
+            <input type="text" id="fcPostMessageHost" value="https://raw.githack.com">
+          </div>
+
+          <div class="section-title-config">Redirect URLs</div>
+          <div class="form-group full-width">
+            <label>success <span class="hint">- placeholders: {cardToken}, {cardType}, etc.</span></label>
+            <textarea id="fcSuccess" style="min-height: 50px; font-family: monospace; font-size: 11px;">https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}</textarea>
+          </div>
+          <div class="form-group full-width">
+            <label>failure</label>
+            <input type="text" id="fcFailure" value="https://pcib2.free.beeceptor.com/failure">
+          </div>
+        </div>
+
+        <div class="section-title-config" style="margin-top: 12px;">Generated URL</div>
+        <textarea id="fcGeneratedUrl" class="url-input" placeholder="Click 'Load Iframe' to generate URL"></textarea>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="fcLoadIframe()">▶ Load Iframe</button>
+          <button class="btn btn-secondary" onclick="fcParseUrl()">Parse URL</button>
+          <button class="btn btn-secondary" onclick="fcCopyUrl()">Copy URL</button>
+          <button class="btn btn-secondary" onclick="fcResetConfig()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Card Capture Iframe</h2></div>
+      <div class="card-body">
+        <div id="fcCustomErrorMessage" class="custom-error-message">
+          <span class="error-icon">⚠️</span>
+          <div class="error-content">
+            <div class="error-title" id="fcErrorTitle">Error</div>
+            <div class="error-details" id="fcErrorDetails">-</div>
+          </div>
+          <button class="error-close" onclick="fcHideError()">×</button>
+        </div>
+        <div id="fcCustomSuccessMessage" class="custom-success-message">
+          <span class="error-icon">✅</span>
+          <div class="error-content">
+            <div class="error-title" id="fcSuccessTitle">Success</div>
+            <div class="error-details" id="fcSuccessDetails">-</div>
+          </div>
+        </div>
+        <div id="iframeWrapper">
+          <iframe id="iframePayment" src="about:blank" scrolling="no"></iframe>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div class="status-dot" id="fcStatusDot"></div>
+        <span class="status-text" id="fcStatusText">Click "Load Iframe" to start</span>
+        <div class="fc-action-buttons">
+          <button class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;" onclick="fcValidateForm()">Validate</button>
+          <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;" onclick="fcSubmitForm()">Submit</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <div class="log-header"><span>PostMessage Log</span><button class="clear-btn" onclick="fcClearLog()">Clear</button></div>
+      <div class="log-content" id="fcLogContent"></div>
+    </div>
+  </div><!-- End Full Config Section -->
+
 </div>
 
 <!-- Account Modal -->
@@ -887,6 +1122,399 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('accountModal').addEventListener('click', (e) => {
     if (e.target.id === 'accountModal') closeAccountModal();
   });
+});
+
+// ==================== SECTION NAVIGATION ====================
+function showSection(section) {
+  const dashboardSection = document.getElementById('dashboardSection');
+  const fullConfigSection = document.getElementById('fullConfigSection');
+  const navLinks = document.querySelectorAll('.nav-bar a');
+
+  if (section === 'fullconfig') {
+    dashboardSection.style.display = 'none';
+    fullConfigSection.style.display = 'block';
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#fullconfig');
+    });
+  } else {
+    dashboardSection.style.display = 'block';
+    fullConfigSection.style.display = 'none';
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#dashboard');
+    });
+  }
+}
+
+// ==================== FULL CONFIG FUNCTIONS ====================
+const FC_DEFAULT_IFRAME_HEIGHT = 300;
+const FC_THREEDS_IFRAME_HEIGHT = 600;
+
+let fcIframeReady = false;
+let fcThreeDsActive = false;
+let fcLastValidationData = null;
+
+const FC_PARAMS = [
+  'sessionToken', 'accessToken', 'brand', 'language', 'css', 'removeBaseCss',
+  'cvv', 'autoDetectCardType', 'defaultCardType', 'cardTypes', 'autoFocus',
+  'nameOnCardValidation', 'ThreeDS', 'merchantName', 'amount', 'currencyCode',
+  'email', 'phone', 'submitWithPostMessage', 'useCustomValidation', 'postMessageHost',
+  'success', 'failure'
+];
+
+const FC_DEFAULTS = {
+  baseUrl: 'https://service-pilot.pcibooking.net/api/payments/capturecard',
+  apiKey: 'f00bcd3c278b4c778c9f4e54796eb070',
+  sessionToken: '', accessToken: '',
+  brand: 'ArekSandbox', language: 'en', css: 'boutiquesirenuse', removeBaseCss: 'false',
+  cvv: 'true', autoDetectCardType: 'true', defaultCardType: '', cardTypes: '',
+  autoFocus: 'true', nameOnCardValidation: '',
+  ThreeDS: 'false', merchantName: '', amount: '0', currencyCode: 'EUR',
+  email: '', phone: '',
+  submitWithPostMessage: 'true', useCustomValidation: 'true',
+  postMessageHost: 'https://raw.githack.com',
+  success: 'https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}',
+  failure: 'https://pcib2.free.beeceptor.com/failure'
+};
+
+function fcGetVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function fcUpdateBaseUrl() {
+  document.getElementById('fcBaseUrl').value = document.getElementById('fcEnvironment').value + '/api/payments/capturecard';
+}
+
+function fcGetPciHost() {
+  try {
+    return new URL(fcGetVal('fcBaseUrl')).origin;
+  } catch(e) {
+    return 'https://service.pcibooking.net';
+  }
+}
+
+function fcBuildUrl() {
+  const base = fcGetVal('fcBaseUrl');
+  const params = [];
+  FC_PARAMS.forEach(p => {
+    const val = fcGetVal('fc' + p.charAt(0).toUpperCase() + p.slice(1));
+    if (val !== '') {
+      params.push(encodeURIComponent(p) + '=' + encodeURIComponent(val));
+    }
+  });
+  return base + '?' + params.join('&');
+}
+
+async function fcGenerateSessionToken() {
+  const apiKey = document.getElementById('fcApiKey').value.trim();
+  if (!apiKey) {
+    fcLog('Please enter your API Key first', 'warning');
+    return;
+  }
+  fcLog('Generating session token...', 'info');
+  try {
+    const response = await fetch(fcGetPciHost() + '/api/payments/paycard/tempsession', {
+      method: 'POST',
+      headers: { 'Authorization': 'APIKEY ' + apiKey, 'Content-Type': 'application/json' }
+    });
+    if (response.ok) {
+      const token = await response.text();
+      document.getElementById('fcSessionToken').value = token.replace(/"/g, '');
+      fcLog('Session token generated (valid for 5 minutes)', 'success');
+    } else {
+      fcLog('Failed to generate token: ' + response.status, 'error');
+    }
+  } catch (e) {
+    fcLog('Error: ' + e.message, 'error');
+  }
+}
+
+function fcLoadIframe() {
+  fcIframeReady = false;
+  fcThreeDsActive = false;
+  const wrapper = document.getElementById('iframeWrapper');
+  const iframe = document.getElementById('iframePayment');
+  wrapper.classList.remove('threeds-active');
+  fcHideError();
+  fcHideSuccess();
+  iframe.style.height = FC_DEFAULT_IFRAME_HEIGHT + 'px';
+  const url = fcBuildUrl();
+  document.getElementById('fcGeneratedUrl').value = url;
+  iframe.src = url;
+  fcUpdateStatus('processing', 'Loading iframe...');
+  fcLog('Loading iframe...', 'info');
+}
+
+function fcParseUrl() {
+  const urlInput = document.getElementById('fcGeneratedUrl').value.trim();
+  if (!urlInput) {
+    fcLog('No URL to parse', 'warning');
+    return;
+  }
+  try {
+    const url = new URL(urlInput);
+    document.getElementById('fcBaseUrl').value = url.origin + url.pathname;
+    let count = 0;
+    url.searchParams.forEach((value, key) => {
+      const fieldId = 'fc' + key.charAt(0).toUpperCase() + key.slice(1);
+      const el = document.getElementById(fieldId);
+      if (el) {
+        el.value = decodeURIComponent(value);
+        count++;
+      }
+    });
+    fcLog('Parsed ' + count + ' parameters from URL', 'success');
+  } catch (e) {
+    fcLog('Invalid URL: ' + e.message, 'error');
+  }
+}
+
+function fcCopyUrl() {
+  const url = fcBuildUrl();
+  document.getElementById('fcGeneratedUrl').value = url;
+  navigator.clipboard.writeText(url).then(() => {
+    fcLog('URL copied to clipboard', 'success');
+  });
+}
+
+function fcResetConfig() {
+  document.getElementById('fcBaseUrl').value = FC_DEFAULTS.baseUrl;
+  document.getElementById('fcApiKey').value = FC_DEFAULTS.apiKey;
+  FC_PARAMS.forEach(p => {
+    const fieldId = 'fc' + p.charAt(0).toUpperCase() + p.slice(1);
+    const el = document.getElementById(fieldId);
+    if (el && FC_DEFAULTS[p] !== undefined) {
+      el.value = FC_DEFAULTS[p];
+    }
+  });
+  fcHideError();
+  fcHideSuccess();
+  fcLog('Configuration reset to defaults', 'info');
+}
+
+function toggleFullConfig() {
+  document.getElementById('configGrid').classList.toggle('collapsed');
+}
+
+function fcUpdateStatus(status, message) {
+  const statusDot = document.getElementById('fcStatusDot');
+  const statusText = document.getElementById('fcStatusText');
+  statusDot.className = 'status-dot ' + status;
+  statusText.textContent = message;
+}
+
+function fcShowError(title, details, cardData) {
+  fcHideSuccess();
+  document.getElementById('fcErrorTitle').textContent = title || 'Card Validation Failed';
+  let detailsText = details || 'This card did not pass the validation';
+  if (cardData) {
+    detailsText += ' (Card: ' + cardData.cardType.toUpperCase();
+    if (cardData.leadingDigits) detailsText += ' ' + cardData.leadingDigits + '...';
+    if (cardData.lastDigits) detailsText += cardData.lastDigits;
+    detailsText += ')';
+  }
+  document.getElementById('fcErrorDetails').textContent = detailsText;
+  document.getElementById('fcCustomErrorMessage').classList.add('show');
+  fcUpdateStatus('error', 'Card validation failed');
+}
+
+function fcHideError() {
+  document.getElementById('fcCustomErrorMessage').classList.remove('show');
+}
+
+function fcShowSuccess(title, details, cardData) {
+  fcHideError();
+  document.getElementById('fcSuccessTitle').textContent = title || 'Card Accepted';
+  let detailsText = details || 'Your card has been validated successfully';
+  if (cardData) {
+    detailsText += ' (Card: ' + cardData.cardType.toUpperCase();
+    if (cardData.leadingDigits) detailsText += ' ' + cardData.leadingDigits + '...';
+    if (cardData.lastDigits) detailsText += cardData.lastDigits;
+    detailsText += ')';
+  }
+  document.getElementById('fcSuccessDetails').textContent = detailsText;
+  document.getElementById('fcCustomSuccessMessage').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('fcCustomSuccessMessage').classList.remove('show');
+  }, 5000);
+}
+
+function fcHideSuccess() {
+  document.getElementById('fcCustomSuccessMessage').classList.remove('show');
+}
+
+function fcLog(message, type = 'info') {
+  const logContent = document.getElementById('fcLogContent');
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.innerHTML = '<span class="time">[' + time + ']</span>' + message;
+  logContent.appendChild(entry);
+  logContent.scrollTop = logContent.scrollHeight;
+}
+
+function fcClearLog() {
+  document.getElementById('fcLogContent').innerHTML = '';
+}
+
+function fcValidateForm() {
+  if (!fcIframeReady) {
+    fcLog('Iframe not ready yet', 'warning');
+    return;
+  }
+  fcHideError();
+  fcHideSuccess();
+  fcUpdateStatus('processing', 'Validating...');
+  document.getElementById('iframePayment').contentWindow.postMessage('validate', fcGetPciHost());
+}
+
+function fcSubmitForm() {
+  if (!fcIframeReady) {
+    fcLog('Iframe not ready yet', 'warning');
+    return;
+  }
+  fcHideError();
+  fcHideSuccess();
+  const wrapper = document.getElementById('iframeWrapper');
+  const iframe = document.getElementById('iframePayment');
+  if (document.getElementById('fcThreeDS').value === 'true') {
+    iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
+    wrapper.classList.add('threeds-active');
+    fcThreeDsActive = true;
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  fcUpdateStatus('processing', 'Submitting...');
+  iframe.contentWindow.postMessage('submit', fcGetPciHost());
+}
+
+function fcActivate3DSMode() {
+  if (fcThreeDsActive) return;
+  fcThreeDsActive = true;
+  const wrapper = document.getElementById('iframeWrapper');
+  const iframe = document.getElementById('iframePayment');
+  iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
+  wrapper.classList.add('threeds-active');
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  fcUpdateStatus('threeds', '3D Secure verification in progress...');
+  fcLog('3DS Mode Activated - Height: ' + FC_THREEDS_IFRAME_HEIGHT + 'px', 'warning');
+}
+
+function fcDeactivate3DSMode() {
+  fcThreeDsActive = false;
+  const wrapper = document.getElementById('iframeWrapper');
+  const iframe = document.getElementById('iframePayment');
+  iframe.style.height = FC_DEFAULT_IFRAME_HEIGHT + 'px';
+  wrapper.classList.remove('threeds-active');
+  fcUpdateStatus('ready', 'Ready');
+  fcLog('3DS Mode Deactivated - Height: ' + FC_DEFAULT_IFRAME_HEIGHT + 'px', 'info');
+}
+
+// PostMessage handler for Full Config iframe
+function fcHandlePostMessage(event) {
+  // Only handle messages when Full Config section is visible
+  if (document.getElementById('fullConfigSection').style.display === 'none') return;
+  if (event.origin.indexOf('pcibooking.net') === -1) return;
+
+  const data = event.data;
+  let parsed = null;
+  if (typeof data === 'string') {
+    try { parsed = JSON.parse(data); } catch (e) {}
+  } else if (typeof data === 'object') {
+    parsed = data;
+  }
+
+  if (parsed) {
+    fcLog('Received: ' + JSON.stringify(parsed), 'info');
+  } else {
+    fcLog('Received: ' + data, 'info');
+  }
+
+  // Handle string messages
+  if (typeof data === 'string' && !parsed) {
+    if (data === 'ready') {
+      fcIframeReady = true;
+      fcHideError();
+      fcHideSuccess();
+      fcUpdateStatus('ready', 'Iframe ready - enter card details');
+      fcLog('Iframe ready', 'success');
+      return;
+    }
+    if (data === 'valid' || data === 'true') {
+      fcLog('Form is valid', 'success');
+      return;
+    }
+    if (data === 'false' || data === 'invalid') {
+      fcUpdateStatus('error', 'Please fill all required fields correctly');
+      fcLog('Form is invalid', 'error');
+      return;
+    }
+    if (data === 'ThreeDsChallengeLoaded') {
+      fcActivate3DSMode();
+      return;
+    }
+    if (data.indexOf('frameDimensionsChanged') === 0) {
+      const parts = data.split(':');
+      const height = parts[2];
+      if (!fcThreeDsActive && height) {
+        const newHeight = parseInt(height, 10);
+        if (newHeight > 0) {
+          document.getElementById('iframePayment').style.height = newHeight + 'px';
+          fcLog('Iframe height set to: ' + newHeight + 'px', 'success');
+        }
+      }
+      return;
+    }
+  }
+
+  // Handle parsed messages
+  if (parsed) {
+    if (parsed.messageType === 'CustomValidation') {
+      fcLog('*** CUSTOM VALIDATION RECEIVED ***', 'warning');
+      fcLastValidationData = {
+        cardType: parsed.cardType,
+        leadingDigits: parsed.leadingDigits,
+        lastDigits: parsed.lastDigits
+      };
+      // Accept all cards in Full Config mode
+      const response = { action: 'customValidationResponse', success: true };
+      fcLog('Validation result: ACCEPT', 'success');
+      fcShowSuccess('Card Validated', 'Your ' + parsed.cardType.toUpperCase() + ' card has been accepted', fcLastValidationData);
+      document.getElementById('iframePayment').contentWindow.postMessage(response, fcGetPciHost());
+      return;
+    }
+    if (parsed.messageType === 'ThreeDsChallengeLoaded' || parsed.messageType === 'OTPdisplayed') {
+      fcActivate3DSMode();
+      return;
+    }
+    if (parsed.messageType === 'OTPsubmitted') {
+      fcLog('OTP submitted', 'success');
+      return;
+    }
+    if (parsed.messageType === 'CardSubmitSuccess') {
+      fcLog('SUCCESS! Token: ' + parsed.cardToken, 'success');
+      fcHideError();
+      fcShowSuccess('Card Tokenized Successfully', 'Token: ' + parsed.cardToken.substring(0, 20) + '...', null);
+      fcUpdateStatus('ready', 'Card tokenized successfully');
+      fcDeactivate3DSMode();
+      return;
+    }
+    if (parsed.messageType === 'CardSubmitFailure') {
+      fcLog('BLOCKED! ' + JSON.stringify(parsed), 'error');
+      fcShowError('Card Submission Failed', parsed.message || 'The card could not be processed', null);
+      fcUpdateStatus('error', 'Card submission failed');
+      fcDeactivate3DSMode();
+      return;
+    }
+  }
+}
+
+window.addEventListener('message', fcHandlePostMessage, false);
+
+// Handle URL hash on page load
+window.addEventListener('load', () => {
+  if (window.location.hash === '#fullconfig') {
+    showSection('fullconfig');
+  }
 });
 </script>
 </body>
