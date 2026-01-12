@@ -1297,6 +1297,8 @@ function fcLoadIframe() {
   iframe.src = url;
   fcUpdateStatus('processing', 'Loading iframe...');
   fcLog('Loading iframe...', 'info');
+  // Scroll to iframe after loading
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function fcParseUrl() {
