@@ -157,12 +157,29 @@
   .log-entry .time { color: #777; margin-right: 8px; }
   .clear-btn { background: transparent; border: 1px solid #fdb913; color: #fdb913; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
   .clear-btn:hover { background: #fdb913; color: #333; }
+
+  /* Navigation */
+  .nav-bar { background: #333; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center; }
+  .nav-bar a { color: white; text-decoration: none; font-size: 13px; padding: 8px 16px; border-radius: 4px; transition: all 0.2s; }
+  .nav-bar a:hover { background: #444; }
+  .nav-bar a.active { background: #fdb913; color: #333; font-weight: 600; }
+  .nav-title { color: #fdb913; font-weight: 700; font-size: 16px; margin-right: auto; }
+
   @media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } .form-group.half-width { grid-column: span 2; } }
-  @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } .form-group.half-width, .form-group.full-width { grid-column: span 1; } }
+  @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } .form-group.half-width, .form-group.full-width { grid-column: span 1; } .nav-bar { flex-wrap: wrap; justify-content: center; } .nav-title { width: 100%; text-align: center; margin-bottom: 8px; } }
 </style>
 </head>
 <body>
 <div class="container">
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <span class="nav-title">PCI Booking Test Suite</span>
+    <a href="index.html">Dashboard</a>
+    <a href="capture-test.html">Card Capture</a>
+    <a href="display-test.html">Card Display</a>
+    <a href="index.html#fullconfig" class="active">Full Config</a>
+  </nav>
+
   <div class="card">
     <div class="card-header">
       <h2>⚙️ PCI Booking Card Entry Form - Full Configuration</h2>
