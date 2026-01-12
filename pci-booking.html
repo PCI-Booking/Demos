@@ -616,7 +616,7 @@ function handlePostMessage(event) {
     if (data === 'ThreeDsChallengeLoaded') { activate3DSMode(); return; }
     if (data.indexOf('frameDimensionsChanged') === 0) {
       var parts = data.split(':'), height = parts[2];
-      if (!threeDsActive && height) { var newHeight = parseInt(height, 10); if (newHeight > 0) setIframeHeight(newHeight); }
+      if (!threeDsActive && height) { var newHeight = Math.ceil(parseFloat(height)); if (newHeight > 0) setIframeHeight(newHeight); }
       return;
     }
   }

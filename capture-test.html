@@ -753,7 +753,7 @@ function handlePostMessage(event) {
       const parts = data.split(':');
       const height = parts[2];
       if (!state.threeDsActive && height) {
-        const newHeight = parseInt(height, 10);
+        const newHeight = Math.ceil(parseFloat(height));
         if (newHeight > 0) setIframeHeight(newHeight);
       }
       return;

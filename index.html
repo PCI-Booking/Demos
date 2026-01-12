@@ -1644,7 +1644,7 @@ function fcHandlePostMessage(event) {
       const parts = data.split(':');
       const height = parts[2];
       if (!fcThreeDsActive && height) {
-        const newHeight = parseInt(height, 10);
+        const newHeight = Math.ceil(parseFloat(height));
         if (newHeight > 0) {
           document.getElementById('iframePayment').style.height = newHeight + 'px';
           fcLog('Iframe height set to: ' + newHeight + 'px', 'success');
