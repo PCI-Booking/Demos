@@ -455,21 +455,47 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           </div>
           <div class="form-group">
             <label>cardTypes</label>
-            <input type="text" id="fcCardTypes" value="" placeholder="visa,mastercard">
+            <input type="text" id="fcCardTypes" value="" placeholder="visa,mastercard,amex">
+          </div>
+          <div class="form-group">
+            <label>minExpiration <span class="hint">- mmyyyy</span></label>
+            <input type="text" id="fcMinExpiration" value="" placeholder="012025">
+          </div>
+          <div class="form-group">
+            <label>expirationMonths</label>
+            <select id="fcExpirationMonths"><option value="numbers" selected>numbers</option><option value="names">names</option></select>
+          </div>
+          <div class="form-group">
+            <label>showOwnerId</label>
+            <select id="fcShowOwnerId"><option value="false" selected>false</option><option value="true">true</option></select>
+          </div>
+          <div class="form-group">
+            <label>nameOnCardValidation</label>
+            <select id="fcNameOnCardValidation"><option value="">default</option><option value="NO_DIGITS">NO_DIGITS</option></select>
           </div>
           <div class="form-group">
             <label>autoFocus</label>
             <select id="fcAutoFocus"><option value="true" selected>true</option><option value="false">false</option></select>
           </div>
+
+          <div class="section-title-config">Token Settings</div>
+          <div class="form-group half-width">
+            <label>creatorReference</label>
+            <input type="text" id="fcCreatorReference" value="">
+          </div>
           <div class="form-group">
-            <label>nameOnCardValidation</label>
-            <select id="fcNameOnCardValidation"><option value="">default</option><option value="NO_DIGITS">NO_DIGITS</option></select>
+            <label>eliminateCardDuplication</label>
+            <select id="fcEliminateCardDuplication"><option value="">default</option><option value="true">true</option><option value="false">false</option></select>
           </div>
 
           <div class="section-title-config">3D Secure Settings</div>
           <div class="form-group">
             <label>ThreeDS</label>
             <select id="fcThreeDS"><option value="false" selected>false</option><option value="true">true</option></select>
+          </div>
+          <div class="form-group">
+            <label>UnavailThreeDSAuth</label>
+            <select id="fcUnavailThreeDSAuth"><option value="Accept" selected>Accept</option><option value="Reject">Reject</option></select>
           </div>
           <div class="form-group">
             <label>merchantName</label>
@@ -483,33 +509,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
             <label>currencyCode</label>
             <input type="text" id="fcCurrencyCode" value="EUR">
           </div>
+
+          <div class="section-title-config">Visa 3DS Requirements</div>
           <div class="form-group half-width">
-            <label>email</label>
+            <label>email <span class="hint">- cardholder email</span></label>
             <input type="email" id="fcEmail" value="" placeholder="joe@bloggs.com">
           </div>
           <div class="form-group half-width">
-            <label>phone</label>
+            <label>phone <span class="hint">- digits only</span></label>
             <input type="text" id="fcPhone" value="" placeholder="00353112223344">
           </div>
 
           <div class="section-title-config">PostMessage Settings</div>
           <div class="form-group">
             <label>submitWithPostMessage</label>
-            <select id="fcSubmitWithPostMessage"><option value="true" selected>true</option><option value="false">false</option></select>
+            <select id="fcSubmitWithPostMessage"><option value="">default</option><option value="true" selected>true</option><option value="false">false</option></select>
           </div>
           <div class="form-group">
             <label>useCustomValidation</label>
             <select id="fcUseCustomValidation"><option value="false">false</option><option value="true" selected>true</option></select>
           </div>
           <div class="form-group half-width">
-            <label>postMessageHost</label>
+            <label>postMessageHost <span class="hint">- parent domain</span></label>
             <input type="text" id="fcPostMessageHost" value="https://raw.githack.com">
+          </div>
+
+          <div class="section-title-config">Custom Validation Settings</div>
+          <div class="form-group half-width">
+            <label>Validation Action <span class="hint">- for testing</span></label>
+            <select id="fcCustomValidationAction">
+              <option value="accept" selected>Accept All Cards</option>
+              <option value="reject">Reject All Cards</option>
+              <option value="reject-visa">Reject Visa Only</option>
+              <option value="reject-mastercard">Reject Mastercard Only</option>
+              <option value="reject-amex">Reject Amex Only</option>
+            </select>
+          </div>
+          <div class="form-group half-width">
+            <label>Rejection Message <span class="hint">- shown outside iframe</span></label>
+            <input type="text" id="fcCustomValidationMessage" value="This card did not pass the validation">
           </div>
 
           <div class="section-title-config">Redirect URLs</div>
           <div class="form-group full-width">
-            <label>success <span class="hint">- placeholders: {cardToken}, {cardType}, etc.</span></label>
-            <textarea id="fcSuccess" style="min-height: 50px; font-family: monospace; font-size: 11px;">https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}</textarea>
+            <label>success <span class="hint">- placeholders: {cardToken}, {cardType}, {cardNumber}, {cvv}, {expiration}, {cardHolderName}, {threeDSecIndication}</span></label>
+            <textarea id="fcSuccess" style="min-height: 50px; font-family: monospace; font-size: 11px;">https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}&cardNumber={cardNumber}&cvv={cvv}&expiration={expiration}&cardHolderName={cardHolderName}&threeDSecIndication={threeDSecIndication}</textarea>
           </div>
           <div class="form-group full-width">
             <label>failure</label>
@@ -1155,8 +1199,10 @@ let fcLastValidationData = null;
 
 const FC_PARAMS = [
   'sessionToken', 'accessToken', 'brand', 'language', 'css', 'removeBaseCss',
-  'cvv', 'autoDetectCardType', 'defaultCardType', 'cardTypes', 'autoFocus',
-  'nameOnCardValidation', 'ThreeDS', 'merchantName', 'amount', 'currencyCode',
+  'cvv', 'autoDetectCardType', 'defaultCardType', 'cardTypes', 'minExpiration',
+  'expirationMonths', 'showOwnerId', 'nameOnCardValidation', 'autoFocus',
+  'creatorReference', 'eliminateCardDuplication',
+  'ThreeDS', 'UnavailThreeDSAuth', 'merchantName', 'amount', 'currencyCode',
   'email', 'phone', 'submitWithPostMessage', 'useCustomValidation', 'postMessageHost',
   'success', 'failure'
 ];
@@ -1167,13 +1213,17 @@ const FC_DEFAULTS = {
   sessionToken: '', accessToken: '',
   brand: 'ArekSandbox', language: 'en', css: 'boutiquesirenuse', removeBaseCss: 'false',
   cvv: 'true', autoDetectCardType: 'true', defaultCardType: '', cardTypes: '',
-  autoFocus: 'true', nameOnCardValidation: '',
-  ThreeDS: 'false', merchantName: '', amount: '0', currencyCode: 'EUR',
+  minExpiration: '', expirationMonths: 'numbers', showOwnerId: 'false',
+  nameOnCardValidation: '', autoFocus: 'true',
+  creatorReference: '', eliminateCardDuplication: '',
+  ThreeDS: 'false', UnavailThreeDSAuth: 'Accept', merchantName: '', amount: '0', currencyCode: 'EUR',
   email: '', phone: '',
   submitWithPostMessage: 'true', useCustomValidation: 'true',
   postMessageHost: 'https://raw.githack.com',
-  success: 'https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}',
-  failure: 'https://pcib2.free.beeceptor.com/failure'
+  success: 'https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}&cardNumber={cardNumber}&cvv={cvv}&expiration={expiration}&cardHolderName={cardHolderName}&threeDSecIndication={threeDSecIndication}',
+  failure: 'https://pcib2.free.beeceptor.com/failure',
+  customValidationAction: 'accept',
+  customValidationMessage: 'This card did not pass the validation'
 };
 
 function fcGetVal(id) {
@@ -1280,6 +1330,8 @@ function fcCopyUrl() {
 function fcResetConfig() {
   document.getElementById('fcBaseUrl').value = FC_DEFAULTS.baseUrl;
   document.getElementById('fcApiKey').value = FC_DEFAULTS.apiKey;
+  document.getElementById('fcCustomValidationAction').value = FC_DEFAULTS.customValidationAction;
+  document.getElementById('fcCustomValidationMessage').value = FC_DEFAULTS.customValidationMessage;
   FC_PARAMS.forEach(p => {
     const fieldId = 'fc' + p.charAt(0).toUpperCase() + p.slice(1);
     const el = document.getElementById(fieldId);
@@ -1290,6 +1342,29 @@ function fcResetConfig() {
   fcHideError();
   fcHideSuccess();
   fcLog('Configuration reset to defaults', 'info');
+}
+
+function fcPerformCustomValidation(cardData) {
+  const action = document.getElementById('fcCustomValidationAction').value;
+  const message = document.getElementById('fcCustomValidationMessage').value;
+  const cardType = cardData.cardType ? cardData.cardType.toLowerCase() : '';
+  let shouldReject = false;
+  let rejectReason = message;
+
+  if (action === 'reject') {
+    shouldReject = true;
+  } else if (action === 'reject-visa' && cardType === 'visa') {
+    shouldReject = true;
+    rejectReason = 'Visa cards are not accepted';
+  } else if (action === 'reject-mastercard' && cardType === 'mastercard') {
+    shouldReject = true;
+    rejectReason = 'Mastercard cards are not accepted';
+  } else if (action === 'reject-amex' && cardType === 'amex') {
+    shouldReject = true;
+    rejectReason = 'American Express cards are not accepted';
+  }
+
+  return { shouldReject, message: rejectReason };
 }
 
 function toggleFullConfig() {
@@ -1475,10 +1550,17 @@ function fcHandlePostMessage(event) {
         leadingDigits: parsed.leadingDigits,
         lastDigits: parsed.lastDigits
       };
-      // Accept all cards in Full Config mode
-      const response = { action: 'customValidationResponse', success: true };
-      fcLog('Validation result: ACCEPT', 'success');
-      fcShowSuccess('Card Validated', 'Your ' + parsed.cardType.toUpperCase() + ' card has been accepted', fcLastValidationData);
+      const validationResult = fcPerformCustomValidation(fcLastValidationData);
+      let response;
+      if (!validationResult.shouldReject) {
+        response = { action: 'customValidationResponse', success: true };
+        fcLog('Validation result: ACCEPT', 'success');
+        fcShowSuccess('Card Validated', 'Your ' + parsed.cardType.toUpperCase() + ' card has been accepted', fcLastValidationData);
+      } else {
+        response = { action: 'customValidationResponse', success: false, message: validationResult.message };
+        fcLog('Validation result: REJECT - ' + validationResult.message, 'error');
+        fcShowError('Card Not Accepted', validationResult.message, fcLastValidationData);
+      }
       document.getElementById('iframePayment').contentWindow.postMessage(response, fcGetPciHost());
       return;
     }
