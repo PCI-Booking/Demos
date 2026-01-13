@@ -1753,6 +1753,10 @@ function fcDeactivate3DSMode() {
 function fcShow3DSModal() {
   const backdrop = document.getElementById('threeDsBackdrop');
   const wrapper = document.getElementById('iframeWrapper');
+  const iframe = document.getElementById('iframePayment');
+
+  // Set generous height for 3DS content (can't detect cross-origin scrollbars)
+  iframe.style.height = '650px';
 
   // Show backdrop and transform iframe wrapper into modal appearance
   backdrop.classList.add('show');
