@@ -1820,8 +1820,8 @@ function fcHandlePostMessage(event) {
       const height = parts[2];
       const displayMode = document.getElementById('fc3dsDisplayMode').value;
       if (height) {
-        // Add 10px buffer to prevent cut-off due to rounding/sub-pixel rendering
-        const newHeight = Math.ceil(parseFloat(height)) + 10;
+        // Add 20px buffer to prevent cut-off due to rounding/sub-pixel rendering
+        const newHeight = Math.ceil(parseFloat(height)) + 20;
         // In modal mode: always allow resize during 3DS
         // In inline mode: allow resize if not in 3DS, or if 3DS needs more than minimum
         const isModalMode = displayMode === 'modal';
