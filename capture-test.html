@@ -753,7 +753,8 @@ function handlePostMessage(event) {
       const parts = data.split(':');
       const height = parts[2];
       if (height) {
-        const newHeight = Math.ceil(parseFloat(height));
+        // Add 5px buffer to prevent cut-off due to rounding/sub-pixel rendering
+        const newHeight = Math.ceil(parseFloat(height)) + 5;
         // Allow resize if not in 3DS mode, or if 3DS needs more than the minimum height
         if (newHeight > 0 && (!state.threeDsActive || newHeight > THREEDS_IFRAME_HEIGHT)) {
           setIframeHeight(newHeight);
