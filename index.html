@@ -218,8 +218,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .multiselect-actions .btn-select-all { background: #fdb913; color: #333; }
 .multiselect-actions .btn-clear-all { background: #eee; color: #333; }
 
+/* 3DS Modal Overlay */
+.threeds-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; }
+.threeds-modal-overlay.show { display: flex; }
+.threeds-modal { background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalSlideIn 0.3s ease-out; }
+@keyframes modalSlideIn { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.threeds-modal-header { background: #333; color: white; padding: 16px 20px; border-bottom: 3px solid #fdb913; display: flex; justify-content: space-between; align-items: center; }
+.threeds-modal-header h3 { font-size: 16px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+.threeds-modal-header .secure-badge { background: #fdb913; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.threeds-modal-body { padding: 0; min-height: 400px; max-height: calc(90vh - 60px); overflow: auto; }
+.threeds-modal-body iframe { width: 100%; min-height: 500px; border: 0; display: block; }
+.threeds-modal-status { padding: 12px 20px; background: #f8f8f8; border-top: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
+.threeds-modal-status .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #fdb913; animation: pulse 1s infinite; }
+.threeds-modal-status .status-text { font-size: 13px; color: #666; }
+
 @media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } .threeds-modal { width: 95%; max-width: none; max-height: 95vh; border-radius: 8px; } }
 </style>
 </head>
 <body>
@@ -594,6 +608,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
             <label>currencyCode <span class="hint">- string, ISO 4217</span></label>
             <input type="text" id="fcCurrencyCode" value="EUR" placeholder="EUR (default)">
           </div>
+          <div class="form-group">
+            <label>3DS Display Mode <span class="hint">- how to show 3DS challenge</span></label>
+            <select id="fc3dsDisplayMode">
+              <option value="inline" selected>Inline (default)</option>
+              <option value="modal">Modal Overlay</option>
+            </select>
+          </div>
 
           <div class="section-title-config">Visa 3DS Requirements (provide at least one for 3DS)</div>
           <div class="form-group half-width">
@@ -713,6 +734,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeAccountModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveAccount()">Save Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3DS Challenge Modal -->
+<div class="threeds-modal-overlay" id="threeDsModal">
+  <div class="threeds-modal">
+    <div class="threeds-modal-header">
+      <h3>🔐 3D Secure Verification <span class="secure-badge">SECURE</span></h3>
+    </div>
+    <div class="threeds-modal-body" id="threeDsModalBody">
+      <!-- Iframe will be moved here during 3DS -->
+    </div>
+    <div class="threeds-modal-status">
+      <div class="status-dot"></div>
+      <span class="status-text">Please complete the verification in the form above</span>
     </div>
   </div>
 </div>
@@ -1676,11 +1713,20 @@ function fcSubmitForm() {
   fcHideSuccess();
   const wrapper = document.getElementById('iframeWrapper');
   const iframe = document.getElementById('iframePayment');
+  const displayMode = document.getElementById('fc3dsDisplayMode').value;
+
   if (document.getElementById('fcThreeDS').value === 'true') {
-    iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
-    wrapper.classList.add('threeds-active');
     fcThreeDsActive = true;
-    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (displayMode === 'modal') {
+      // Modal mode - show modal immediately on submit for 3DS
+      fcShow3DSModal();
+      fcLog('3DS Submit - Modal opened', 'info');
+    } else {
+      // Inline mode - expand iframe
+      iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
+      wrapper.classList.add('threeds-active');
+      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
   fcUpdateStatus('processing', 'Submitting...');
   iframe.contentWindow.postMessage('submit', fcGetPciHost());
@@ -1689,23 +1735,75 @@ function fcSubmitForm() {
 function fcActivate3DSMode() {
   if (fcThreeDsActive) return;
   fcThreeDsActive = true;
+  const displayMode = document.getElementById('fc3dsDisplayMode').value;
   const wrapper = document.getElementById('iframeWrapper');
   const iframe = document.getElementById('iframePayment');
-  iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
-  wrapper.classList.add('threeds-active');
-  wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (displayMode === 'modal') {
+    // Modal mode - move iframe to modal
+    fcShow3DSModal();
+    fcLog('3DS Mode Activated - Modal Display', 'warning');
+  } else {
+    // Inline mode - expand iframe in place
+    iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
+    wrapper.classList.add('threeds-active');
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    fcLog('3DS Mode Activated - Inline, Height: ' + FC_THREEDS_IFRAME_HEIGHT + 'px', 'warning');
+  }
   fcUpdateStatus('threeds', '3D Secure verification in progress...');
-  fcLog('3DS Mode Activated - Height: ' + FC_THREEDS_IFRAME_HEIGHT + 'px', 'warning');
 }
 
 function fcDeactivate3DSMode() {
   fcThreeDsActive = false;
+  const displayMode = document.getElementById('fc3dsDisplayMode').value;
   const wrapper = document.getElementById('iframeWrapper');
   const iframe = document.getElementById('iframePayment');
-  iframe.style.height = FC_DEFAULT_IFRAME_HEIGHT + 'px';
-  wrapper.classList.remove('threeds-active');
+
+  if (displayMode === 'modal') {
+    // Modal mode - move iframe back and close modal
+    fcHide3DSModal();
+    fcLog('3DS Mode Deactivated - Modal Closed', 'info');
+  } else {
+    // Inline mode - restore iframe height
+    iframe.style.height = FC_DEFAULT_IFRAME_HEIGHT + 'px';
+    wrapper.classList.remove('threeds-active');
+    fcLog('3DS Mode Deactivated - Height: ' + FC_DEFAULT_IFRAME_HEIGHT + 'px', 'info');
+  }
   fcUpdateStatus('ready', 'Ready');
-  fcLog('3DS Mode Deactivated - Height: ' + FC_DEFAULT_IFRAME_HEIGHT + 'px', 'info');
+}
+
+function fcShow3DSModal() {
+  const modal = document.getElementById('threeDsModal');
+  const modalBody = document.getElementById('threeDsModalBody');
+  const iframe = document.getElementById('iframePayment');
+  const wrapper = document.getElementById('iframeWrapper');
+
+  // Store original parent reference
+  iframe.dataset.originalParent = 'iframeWrapper';
+
+  // Move iframe to modal
+  modalBody.appendChild(iframe);
+  iframe.style.height = '500px';
+  iframe.style.minHeight = '500px';
+
+  // Show modal
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function fcHide3DSModal() {
+  const modal = document.getElementById('threeDsModal');
+  const iframe = document.getElementById('iframePayment');
+  const wrapper = document.getElementById('iframeWrapper');
+
+  // Move iframe back to original location
+  wrapper.appendChild(iframe);
+  iframe.style.height = FC_DEFAULT_IFRAME_HEIGHT + 'px';
+  iframe.style.minHeight = '';
+
+  // Hide modal
+  modal.classList.remove('show');
+  document.body.style.overflow = ''; // Restore scrolling
 }
 
 // PostMessage handler for Full Config iframe
