@@ -1715,18 +1715,12 @@ function fcSubmitForm() {
   const iframe = document.getElementById('iframePayment');
   const displayMode = document.getElementById('fc3dsDisplayMode').value;
 
-  if (document.getElementById('fcThreeDS').value === 'true') {
-    fcThreeDsActive = true;
-    if (displayMode === 'modal') {
-      // Modal mode - show modal immediately on submit for 3DS
-      fcShow3DSModal();
-      fcLog('3DS Submit - Modal opened', 'info');
-    } else {
-      // Inline mode - expand iframe
-      iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
-      wrapper.classList.add('threeds-active');
-      wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  // For inline mode, pre-expand iframe for 3DS
+  // For modal mode, modal will open when ThreeDsChallengeLoaded is received
+  if (document.getElementById('fcThreeDS').value === 'true' && displayMode === 'inline') {
+    iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
+    wrapper.classList.add('threeds-active');
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   fcUpdateStatus('processing', 'Submitting...');
   iframe.contentWindow.postMessage('submit', fcGetPciHost());
