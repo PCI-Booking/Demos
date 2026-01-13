@@ -1718,9 +1718,12 @@ function fcActivate3DSMode() {
   const iframe = document.getElementById('iframePayment');
 
   if (displayMode === 'modal') {
-    // Modal mode - move iframe to modal
-    fcShow3DSModal();
-    fcLog('3DS Mode Activated - Modal Display', 'warning');
+    // Modal mode - delay showing modal to allow 3DS challenge to render in iframe first
+    fcLog('3DS Challenge detected - waiting for content to render...', 'warning');
+    setTimeout(() => {
+      fcShow3DSModal();
+      fcLog('3DS Mode Activated - Modal Display', 'warning');
+    }, 500);
   } else {
     // Inline mode - expand iframe in place
     iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
