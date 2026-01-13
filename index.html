@@ -1260,7 +1260,7 @@ function showSection(section) {
 
 // ==================== FULL CONFIG FUNCTIONS ====================
 const FC_DEFAULT_IFRAME_HEIGHT = 300;
-const FC_THREEDS_IFRAME_HEIGHT = 650;
+const FC_THREEDS_IFRAME_HEIGHT = 600;
 
 let fcIframeReady = false;
 let fcThreeDsActive = false;
@@ -1702,6 +1702,7 @@ function fcSubmitForm() {
   // For inline mode, pre-expand iframe for 3DS
   // For modal mode, modal will open when ThreeDsChallengeLoaded is received
   if (document.getElementById('fcThreeDS').value === 'true' && displayMode === 'inline') {
+    fcThreeDsActive = true;
     iframe.style.height = FC_THREEDS_IFRAME_HEIGHT + 'px';
     wrapper.classList.add('threeds-active');
     wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
