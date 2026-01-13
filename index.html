@@ -201,6 +201,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .log-entry .time { color: #777; margin-right: 8px; }
 .clear-btn { background: transparent; border: 1px solid #fdb913; color: #fdb913; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
 .collapse-btn { background: #fdb913; border: none; color: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+
+/* Multi-select dropdown for card types */
+.multiselect-container { position: relative; }
+.multiselect-trigger { width: 100%; padding: 6px 28px 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; background: #fffbe6; cursor: pointer; text-align: left; min-height: 32px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+.multiselect-trigger:focus { outline: none; border-color: #fdb913; box-shadow: 0 0 0 2px rgba(253,185,19,0.2); }
+.multiselect-trigger .placeholder { color: #999; }
+.multiselect-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; max-height: 250px; overflow-y: auto; margin-top: 2px; }
+.multiselect-dropdown.show { display: block; }
+.multiselect-option { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; font-size: 12px; transition: background 0.15s; }
+.multiselect-option:hover { background: #fffbe6; }
+.multiselect-option input[type="checkbox"] { margin-right: 8px; accent-color: #fdb913; }
+.multiselect-option .card-icon { margin-right: 6px; font-size: 14px; }
+.multiselect-actions { display: flex; gap: 8px; padding: 8px 12px; border-top: 1px solid #eee; background: #fafafa; }
+.multiselect-actions button { flex: 1; padding: 6px 10px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; }
+.multiselect-actions .btn-select-all { background: #fdb913; color: #333; }
+.multiselect-actions .btn-clear-all { background: #eee; color: #333; }
+
 @media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } }
 </style>
@@ -499,7 +516,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           </div>
           <div class="form-group">
             <label>cardTypes <span class="hint">- string, comma separated</span></label>
-            <input type="text" id="fcCardTypes" value="" placeholder="visa,mastercard,amex">
+            <input type="hidden" id="fcCardTypes" value="">
+            <div class="multiselect-container" id="fcCardTypesMultiselect">
+              <button type="button" class="multiselect-trigger" onclick="fcToggleCardTypesDropdown()">
+                <span class="placeholder">Select card types...</span>
+              </button>
+              <div class="multiselect-dropdown" id="fcCardTypesDropdown">
+                <label class="multiselect-option"><input type="checkbox" value="visa" onchange="fcUpdateCardTypes()"><span class="card-icon">💳</span>Visa</label>
+                <label class="multiselect-option"><input type="checkbox" value="mastercard" onchange="fcUpdateCardTypes()"><span class="card-icon">🔴</span>Mastercard</label>
+                <label class="multiselect-option"><input type="checkbox" value="amex" onchange="fcUpdateCardTypes()"><span class="card-icon">💠</span>American Express</label>
+                <label class="multiselect-option"><input type="checkbox" value="discover" onchange="fcUpdateCardTypes()"><span class="card-icon">🔶</span>Discover</label>
+                <label class="multiselect-option"><input type="checkbox" value="diners" onchange="fcUpdateCardTypes()"><span class="card-icon">🍽️</span>Diners Club</label>
+                <label class="multiselect-option"><input type="checkbox" value="jcb" onchange="fcUpdateCardTypes()"><span class="card-icon">🏯</span>JCB</label>
+                <label class="multiselect-option"><input type="checkbox" value="maestro" onchange="fcUpdateCardTypes()"><span class="card-icon">🎵</span>Maestro</label>
+                <label class="multiselect-option"><input type="checkbox" value="electron" onchange="fcUpdateCardTypes()"><span class="card-icon">⚡</span>Visa Electron</label>
+                <label class="multiselect-option"><input type="checkbox" value="cartebleue" onchange="fcUpdateCardTypes()"><span class="card-icon">🔵</span>Carte Bleue</label>
+                <label class="multiselect-option"><input type="checkbox" value="dankort" onchange="fcUpdateCardTypes()"><span class="card-icon">🇩🇰</span>Dankort</label>
+                <label class="multiselect-option"><input type="checkbox" value="unionpay" onchange="fcUpdateCardTypes()"><span class="card-icon">🇨🇳</span>UnionPay</label>
+                <label class="multiselect-option"><input type="checkbox" value="elo" onchange="fcUpdateCardTypes()"><span class="card-icon">🇧🇷</span>Elo</label>
+                <label class="multiselect-option"><input type="checkbox" value="hipercard" onchange="fcUpdateCardTypes()"><span class="card-icon">🇧🇷</span>Hipercard</label>
+                <div class="multiselect-actions">
+                  <button type="button" class="btn-select-all" onclick="fcSelectAllCardTypes()">Select All</button>
+                  <button type="button" class="btn-clear-all" onclick="fcClearAllCardTypes()">Clear All</button>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label>minExpiration <span class="hint">- string, mmyyyy</span></label>
@@ -1390,6 +1431,70 @@ async function fcGenerateAccessToken() {
   }
 }
 
+// ==================== CARD TYPES MULTI-SELECT ====================
+function fcToggleCardTypesDropdown() {
+  const dropdown = document.getElementById('fcCardTypesDropdown');
+  dropdown.classList.toggle('show');
+}
+
+function fcUpdateCardTypes() {
+  const checkboxes = document.querySelectorAll('#fcCardTypesDropdown input[type="checkbox"]');
+  const selected = [];
+  checkboxes.forEach(cb => {
+    if (cb.checked) selected.push(cb.value);
+  });
+
+  // Update hidden input
+  document.getElementById('fcCardTypes').value = selected.join(',');
+
+  // Update trigger button text
+  const trigger = document.querySelector('#fcCardTypesMultiselect .multiselect-trigger');
+  if (selected.length === 0) {
+    trigger.innerHTML = '<span class="placeholder">Select card types...</span>';
+  } else if (selected.length <= 3) {
+    trigger.textContent = selected.join(', ');
+  } else {
+    trigger.textContent = selected.slice(0, 3).join(', ') + ' +' + (selected.length - 3) + ' more';
+  }
+}
+
+function fcSelectAllCardTypes() {
+  const checkboxes = document.querySelectorAll('#fcCardTypesDropdown input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = true);
+  fcUpdateCardTypes();
+}
+
+function fcClearAllCardTypes() {
+  const checkboxes = document.querySelectorAll('#fcCardTypesDropdown input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = false);
+  fcUpdateCardTypes();
+}
+
+function fcSetCardTypes(cardTypesString) {
+  // Clear all first
+  const checkboxes = document.querySelectorAll('#fcCardTypesDropdown input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = false);
+
+  // Check the ones in the string
+  if (cardTypesString) {
+    const types = cardTypesString.split(',').map(t => t.trim().toLowerCase());
+    checkboxes.forEach(cb => {
+      if (types.includes(cb.value.toLowerCase())) {
+        cb.checked = true;
+      }
+    });
+  }
+  fcUpdateCardTypes();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const multiselect = document.getElementById('fcCardTypesMultiselect');
+  if (multiselect && !multiselect.contains(e.target)) {
+    document.getElementById('fcCardTypesDropdown').classList.remove('show');
+  }
+});
+
 function fcLoadIframe() {
   fcIframeReady = false;
   fcThreeDsActive = false;
@@ -1424,6 +1529,10 @@ function fcParseUrl() {
       if (el) {
         el.value = decodeURIComponent(value);
         count++;
+        // Special handling for cardTypes - update multi-select checkboxes
+        if (key === 'cardTypes') {
+          fcSetCardTypes(decodeURIComponent(value));
+        }
       }
     });
     fcLog('Parsed ' + count + ' parameters from URL', 'success');
@@ -1452,6 +1561,8 @@ function fcResetConfig() {
       el.value = FC_DEFAULTS[p];
     }
   });
+  // Reset cardTypes multi-select
+  fcClearAllCardTypes();
   fcHideError();
   fcHideSuccess();
   fcLog('Configuration reset to defaults', 'info');
