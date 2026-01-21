@@ -4,10 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Card Display Tests - PCI Booking</title>
+<!-- Google Fonts - Plus Jakarta Sans -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 20px; }
-.container { max-width: 900px; margin: 0 auto; }
+body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 20px; }
+.container { max-width: 1200px; margin: 0 auto; }
 
 /* Navigation */
 .nav-bar { background: #333; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center; }
@@ -20,41 +24,95 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
 .card-header { background: #333; color: white; padding: 16px 20px; border-bottom: 3px solid #fdb913; display: flex; justify-content: space-between; align-items: center; }
 .card-header h2 { font-size: 18px; font-weight: 500; }
-.card-body { padding: 40px; text-align: center; }
+.card-body { padding: 20px; }
+.collapse-btn { background: #fdb913; border: none; color: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
 
-/* Coming Soon */
-.coming-soon-icon { font-size: 80px; margin-bottom: 24px; opacity: 0.8; }
-.coming-soon-title { font-size: 28px; font-weight: 700; color: #333; margin-bottom: 16px; }
-.coming-soon-subtitle { font-size: 15px; color: #666; margin-bottom: 30px; line-height: 1.6; max-width: 500px; margin-left: auto; margin-right: auto; }
-.badge { display: inline-block; padding: 8px 20px; background: #ff9800; color: #000; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+/* Form Elements */
+.config-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.config-grid.collapsed { display: none; }
+.form-group { margin-bottom: 6px; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group.half-width { grid-column: span 2; }
+.form-group label { display: block; font-size: 10px; font-weight: 600; color: #333; margin-bottom: 3px; text-transform: uppercase; }
+.form-group .hint { font-size: 9px; color: #888; font-weight: normal; text-transform: none; }
+.form-group input, .form-group textarea { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; font-family: inherit; }
+.form-group select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; font-family: inherit; background-color: #fffbe6; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; appearance: none; -webkit-appearance: none; -moz-appearance: none; padding-right: 28px; cursor: pointer; }
+.form-group textarea { resize: vertical; min-height: 50px; font-family: monospace; font-size: 11px; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #fdb913; box-shadow: 0 0 0 2px rgba(253,185,19,0.2); }
+.section-title { font-size: 11px; font-weight: 700; color: #333; margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #fdb913; grid-column: 1 / -1; text-transform: uppercase; }
 
-/* Features Preview */
-.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 30px; text-align: left; }
-.feature-item { background: #fafafa; border-radius: 8px; padding: 20px; border: 1px solid #eee; }
-.feature-icon { font-size: 28px; margin-bottom: 10px; }
-.feature-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 6px; }
-.feature-desc { font-size: 12px; color: #666; line-height: 1.5; }
+/* Buttons */
+.btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.btn { padding: 10px 20px; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.btn-primary { background: #fdb913; color: #333; }
+.btn-primary:hover { background: #e5a811; box-shadow: 0 2px 8px rgba(253,185,19,0.4); }
+.btn-secondary { background: #333; color: white; }
+.btn-secondary:hover { background: #444; }
+.btn-success { background: #4caf50; color: white; }
+.btn-danger { background: #f44336; color: white; }
 
-/* API Info */
-.api-info { margin-top: 30px; text-align: left; background: #fafafa; border-radius: 8px; padding: 20px; border: 1px solid #eee; }
-.api-info-title { font-size: 14px; font-weight: 600; color: #fdb913; margin-bottom: 12px; text-transform: uppercase; }
-.api-endpoint { background: #333; padding: 14px 18px; border-radius: 6px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; margin-bottom: 16px; color: white; }
-.api-endpoint-method { color: #4caf50; font-weight: 600; }
-.api-endpoint-url { color: #aaa; }
-.api-params { font-size: 13px; color: #666; }
-.api-params dt { color: #333; font-weight: 600; margin-top: 10px; }
-.api-params dd { margin-left: 16px; margin-top: 4px; }
+/* Two Column Layout */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
-/* Back Button */
-.back-btn { margin-top: 30px; padding: 14px 28px; background: #fdb913; color: #333; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; transition: background 0.2s; }
-.back-btn:hover { background: #e5a811; }
+/* Display Type Tabs */
+.display-tabs { display: flex; gap: 0; margin-bottom: 0; }
+.display-tab { flex: 1; padding: 14px 20px; background: #eee; border: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; transition: all 0.2s; border-bottom: 3px solid transparent; }
+.display-tab:first-child { border-radius: 8px 0 0 0; }
+.display-tab:last-child { border-radius: 0 8px 0 0; }
+.display-tab:hover { background: #e0e0e0; }
+.display-tab.active { background: white; color: #333; border-bottom-color: #fdb913; }
+.display-content { background: white; border-radius: 0 0 8px 8px; padding: 20px; }
+
+/* Iframe Section */
+.iframe-wrapper { width: 100%; background: #fff; border: 2px solid #ddd; border-radius: 8px; overflow: hidden; transition: all 0.3s; min-height: 200px; }
+.iframe-wrapper.active { border-color: #fdb913; box-shadow: 0 0 15px rgba(253, 185, 19, 0.3); }
+.iframe-wrapper iframe { display: block; width: 100%; border: 0; min-height: 200px; }
+
+/* Status & Messages */
+.status-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #f8f8f8; border-top: 1px solid #eee; flex-wrap: wrap; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+.status-dot.ready { background: #4caf50; }
+.status-dot.processing { background: #fdb913; animation: pulse 1s infinite; }
+.status-dot.error { background: #f44336; }
+@keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+.status-text { font-size: 13px; color: #666; }
+
+/* Log Panel */
+.log-panel { background: #333; border-radius: 8px; overflow: hidden; margin-top: 20px; }
+.log-header { background: #222; color: white; padding: 10px 16px; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 2px solid #fdb913; }
+.log-content { padding: 12px 16px; max-height: 150px; overflow-y: auto; font-family: 'Monaco','Menlo',monospace; font-size: 11px; }
+.log-entry { color: #aaa; margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #555; word-break: break-all; }
+.log-entry.info { border-color: #fdb913; color: #fdb913; }
+.log-entry.success { border-color: #4caf50; color: #81c784; }
+.log-entry.warning { border-color: #ff9800; color: #ffb74d; }
+.log-entry.error { border-color: #f44336; color: #e57373; }
+.log-entry .time { color: #777; margin-right: 8px; }
+.clear-btn { background: transparent; border: 1px solid #fdb913; color: #fdb913; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
+/* Info Box */
+.info-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #1565c0; }
+.info-box-title { font-weight: 700; margin-bottom: 4px; }
+
+/* URL Preview */
+.url-preview { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 11px; word-break: break-all; margin-top: 10px; max-height: 80px; overflow-y: auto; }
+
+/* Error/Success Messages */
+.message { display: none; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; animation: slideDown 0.3s ease-out; }
+.message.show { display: flex; align-items: center; gap: 12px; }
+.message.error { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); color: white; }
+.message.success { background: linear-gradient(135deg, #4caf50 0%, #43a047 100%); color: white; }
+.message-icon { font-size: 24px; }
+.message-content { flex: 1; }
+.message-title { font-weight: 700; margin-bottom: 4px; }
+.message-details { font-size: 13px; opacity: 0.9; }
+.message-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 18px; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .features-grid { grid-template-columns: 1fr; }
-  .nav-bar { flex-wrap: wrap; justify-content: center; }
-  .nav-title { width: 100%; text-align: center; margin-bottom: 8px; }
-}
+@media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } .form-group.half-width { grid-column: span 2; } }
+@media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } .form-group.half-width, .form-group.full-width { grid-column: span 1; } .nav-bar { flex-wrap: wrap; justify-content: center; } .nav-title { width: 100%; text-align: center; margin-bottom: 8px; } }
 </style>
 </head>
 <body>
@@ -68,60 +126,653 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <a href="index.html#fullconfig">Full Config</a>
   </nav>
 
+  <!-- Configuration Card -->
   <div class="card">
     <div class="card-header">
-      <h2>Card Display Tests</h2>
+      <h2>Configuration</h2>
+      <button class="collapse-btn" onclick="toggleConfig()">Show/Hide</button>
     </div>
     <div class="card-body">
-      <div class="coming-soon-icon">👁</div>
-      <div class="badge">Coming Soon</div>
-      <h1 class="coming-soon-title">Card Display Testing</h1>
-      <p class="coming-soon-subtitle">
-        Test the card display iframe for viewing masked and full card data.
-        This feature will allow you to verify card display functionality with various display modes and masking options.
-      </p>
+      <div class="config-grid" id="configGrid">
+        <div class="section-title">Account Selection</div>
+        <div class="form-group half-width">
+          <label>Select Account <span class="hint">- predefined from Dashboard</span></label>
+          <select id="accountSelector" onchange="loadSelectedAccount()">
+            <option value="">-- Select Account --</option>
+          </select>
+        </div>
+        <div class="form-group half-width">
+          <label>CSS Theme <span class="hint">- from account</span></label>
+          <select id="css">
+            <option value="">Default</option>
+          </select>
+        </div>
 
-      <div class="features-grid">
-        <div class="feature-item">
-          <div class="feature-icon">🔒</div>
-          <div class="feature-title">Masked Display</div>
-          <div class="feature-desc">View card numbers with configurable masking patterns (e.g., **** **** **** 1234)</div>
+        <div class="section-title">Environment & Authentication</div>
+        <div class="form-group">
+          <label>Environment</label>
+          <select id="environment">
+            <option value="https://service-plan.pcibooking.net">Developer</option>
+            <option value="https://service-qa.pcibooking.net">QA</option>
+            <option value="https://service-pilot.pcibooking.net" selected>Staging</option>
+            <option value="https://service.pcibooking.net">Production</option>
+          </select>
         </div>
-        <div class="feature-item">
-          <div class="feature-icon">📋</div>
-          <div class="feature-title">Full Display</div>
-          <div class="feature-desc">Display complete card data for authorized users with proper authentication</div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="apiKey" value="f00bcd3c278b4c778c9f4e54796eb070">
         </div>
-        <div class="feature-item">
-          <div class="feature-icon">🎨</div>
-          <div class="feature-title">Custom Styling</div>
-          <div class="feature-desc">Test various CSS themes and display formats to match your brand</div>
+        <div class="form-group">
+          <label>Session Token</label>
+          <input type="text" id="sessionToken" value="" placeholder="Click Generate">
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary btn-sm" onclick="generateSessionToken()" style="width:100%">Generate Token</button>
+        </div>
+
+        <div class="section-title">Card Token (from Capture)</div>
+        <div class="form-group full-width">
+          <label>Card Token <span class="hint">- obtained from card capture process</span></label>
+          <input type="text" id="cardToken" value="" placeholder="Enter card token from capture (e.g., 4111-XXXX-XXXX-1111_abcd1234)">
+        </div>
+
+        <div class="section-title">Display Options</div>
+        <div class="form-group">
+          <label>Brand</label>
+          <input type="text" id="brand" value="demos">
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <select id="language">
+            <option value="en" selected>English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="it">Italian</option>
+            <option value="pt">Portuguese</option>
+            <option value="he">Hebrew</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Display Mode</label>
+          <select id="displayMode">
+            <option value="masked" selected>Masked (****1234)</option>
+            <option value="full">Full (all digits)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Show CVV</label>
+          <select id="showCvv">
+            <option value="false" selected>No</option>
+            <option value="true">Yes</option>
+          </select>
         </div>
       </div>
-
-      <div class="api-info">
-        <div class="api-info-title">API Reference</div>
-        <div class="api-endpoint">
-          <span class="api-endpoint-method">GET</span>
-          <span class="api-endpoint-url"> /api/payments/displaycard</span>
-        </div>
-        <dl class="api-params">
-          <dt>pciBookingAPIKey</dt>
-          <dd>Your API key for authentication</dd>
-          <dt>brand</dt>
-          <dd>Brand identifier for the request</dd>
-          <dt>cardToken</dt>
-          <dd>Token of the card to display (obtained from card capture)</dd>
-          <dt>displayMode</dt>
-          <dd>masked | full - How to display the card data</dd>
-          <dt>css</dt>
-          <dd>Optional CSS theme or custom stylesheet URL</dd>
-        </dl>
-      </div>
-
-      <a href="capture-test.html" class="back-btn">Start with Card Capture Tests</a>
     </div>
   </div>
+
+  <!-- Display Type Selection -->
+  <div class="card" style="overflow: visible;">
+    <div class="display-tabs">
+      <button class="display-tab active" onclick="switchDisplayType('form')" id="tabForm">
+        1. Card Display Form
+      </button>
+      <button class="display-tab" onclick="switchDisplayType('branded')" id="tabBranded">
+        2. Branded Card Display
+      </button>
+    </div>
+    <div class="display-content">
+      <!-- Display Form Section -->
+      <div id="displayFormSection">
+        <div class="info-box">
+          <div class="info-box-title">Card Display Form</div>
+          Displays card data in a simple form layout. Uses the <code>/api/payments/displaycard</code> endpoint.
+          Ideal for showing card details in a structured format.
+        </div>
+
+        <div class="two-col">
+          <div>
+            <h4 style="margin-bottom: 12px; font-size: 14px;">Display Form Iframe</h4>
+            <div class="iframe-wrapper" id="formIframeWrapper">
+              <iframe id="formIframe" src="about:blank"></iframe>
+            </div>
+            <div class="status-bar">
+              <span class="status-dot" id="formStatusDot"></span>
+              <span class="status-text" id="formStatusText">Ready - Enter card token and load</span>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin-bottom: 12px; font-size: 14px;">URL Preview</h4>
+            <div class="url-preview" id="formUrlPreview">URL will appear here after building...</div>
+            <div class="btn-row">
+              <button class="btn btn-primary" onclick="loadDisplayForm()">Load Display Form</button>
+              <button class="btn btn-secondary" onclick="buildFormUrl()">Build URL Only</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branded Display Section -->
+      <div id="brandedDisplaySection" style="display: none;">
+        <div class="info-box">
+          <div class="info-box-title">Branded Card Display</div>
+          Displays card data with branded styling in a card-like visual format.
+          Uses the <code>/api/payments/displaycard</code> endpoint with branded CSS.
+          Ideal for showing card details with visual card representation.
+        </div>
+
+        <div class="config-grid" style="margin-bottom: 16px;">
+          <div class="section-title">Branded Display Options</div>
+          <div class="form-group">
+            <label>Card Background</label>
+            <select id="brandedBackground">
+              <option value="dark" selected>Dark</option>
+              <option value="light">Light</option>
+              <option value="gradient">Gradient</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Show Card Brand Logo</label>
+            <select id="showBrandLogo">
+              <option value="true" selected>Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Show Expiry</label>
+            <select id="showExpiry">
+              <option value="true" selected>Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Show Cardholder Name</label>
+            <select id="showCardholderName">
+              <option value="true" selected>Yes</option>
+              <option value="false">No</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <h4 style="margin-bottom: 12px; font-size: 14px;">Branded Card Display Iframe</h4>
+            <div class="iframe-wrapper" id="brandedIframeWrapper">
+              <iframe id="brandedIframe" src="about:blank"></iframe>
+            </div>
+            <div class="status-bar">
+              <span class="status-dot" id="brandedStatusDot"></span>
+              <span class="status-text" id="brandedStatusText">Ready - Enter card token and load</span>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin-bottom: 12px; font-size: 14px;">URL Preview</h4>
+            <div class="url-preview" id="brandedUrlPreview">URL will appear here after building...</div>
+            <div class="btn-row">
+              <button class="btn btn-primary" onclick="loadBrandedDisplay()">Load Branded Display</button>
+              <button class="btn btn-secondary" onclick="buildBrandedUrl()">Build URL Only</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="message error" id="errorMessage">
+    <span class="message-icon">!</span>
+    <div class="message-content">
+      <div class="message-title" id="errorTitle">Error</div>
+      <div class="message-details" id="errorDetails"></div>
+    </div>
+    <button class="message-close" onclick="hideError()">&times;</button>
+  </div>
+
+  <div class="message success" id="successMessage">
+    <span class="message-icon">&#10003;</span>
+    <div class="message-content">
+      <div class="message-title" id="successTitle">Success</div>
+      <div class="message-details" id="successDetails"></div>
+    </div>
+    <button class="message-close" onclick="hideSuccess()">&times;</button>
+  </div>
+
+  <!-- Log Panel -->
+  <div class="log-panel">
+    <div class="log-header">
+      <span>Activity Log</span>
+      <button class="clear-btn" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-content" id="logContent"></div>
+  </div>
 </div>
+
+<script>
+// ==================== STATE ====================
+let currentDisplayType = 'form';
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+  populateAccountSelector();
+  setupPostMessageListener();
+  log('Page loaded - Enter card token and select display type', 'info');
+
+  // Check URL for card token parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const cardToken = urlParams.get('cardToken') || urlParams.get('token');
+  if (cardToken) {
+    document.getElementById('cardToken').value = cardToken;
+    log('Card token loaded from URL', 'success');
+  }
+});
+
+// ==================== ACCOUNT MANAGEMENT ====================
+function getAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem('pci-accounts') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function populateAccountSelector() {
+  const accounts = getAccounts();
+  const selector = document.getElementById('accountSelector');
+
+  selector.innerHTML = '<option value="">-- Select Account --</option>';
+
+  const envLabels = {
+    plan: 'Developer',
+    qa: 'QA',
+    pilot: 'Staging',
+    prod: 'Production'
+  };
+
+  const grouped = {};
+  accounts.forEach(acc => {
+    const env = acc.environment || 'pilot';
+    if (!grouped[env]) grouped[env] = [];
+    grouped[env].push(acc);
+  });
+
+  Object.keys(envLabels).forEach(env => {
+    if (grouped[env] && grouped[env].length > 0) {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = envLabels[env];
+      grouped[env].forEach(acc => {
+        const option = document.createElement('option');
+        option.value = acc.id;
+        option.textContent = acc.name;
+        optgroup.appendChild(option);
+      });
+      selector.appendChild(optgroup);
+    }
+  });
+}
+
+function loadSelectedAccount() {
+  const selector = document.getElementById('accountSelector');
+  const accountId = selector.value;
+
+  if (!accountId) {
+    const cssSelect = document.getElementById('css');
+    cssSelect.innerHTML = '<option value="">Default</option>';
+    return;
+  }
+
+  const account = getAccounts().find(a => a.id === accountId);
+  if (!account) return;
+
+  const envUrls = {
+    plan: 'https://service-plan.pcibooking.net',
+    qa: 'https://service-qa.pcibooking.net',
+    pilot: 'https://service-pilot.pcibooking.net',
+    prod: 'https://service.pcibooking.net'
+  };
+
+  if (account.environment && envUrls[account.environment]) {
+    document.getElementById('environment').value = envUrls[account.environment];
+  }
+
+  if (account.apiKey) document.getElementById('apiKey').value = account.apiKey;
+  if (account.brand) document.getElementById('brand').value = account.brand;
+
+  const cssSelect = document.getElementById('css');
+  cssSelect.innerHTML = '<option value="">Default</option>';
+  if (account.cssThemes && account.cssThemes.length > 0) {
+    account.cssThemes.forEach((theme, index) => {
+      const option = document.createElement('option');
+      option.value = theme;
+      option.textContent = theme;
+      if (index === 0) option.selected = true;
+      cssSelect.appendChild(option);
+    });
+  }
+
+  log('Loaded account: ' + account.name, 'success');
+}
+
+// ==================== UI FUNCTIONS ====================
+function toggleConfig() {
+  document.getElementById('configGrid').classList.toggle('collapsed');
+}
+
+function switchDisplayType(type) {
+  currentDisplayType = type;
+
+  document.getElementById('tabForm').classList.toggle('active', type === 'form');
+  document.getElementById('tabBranded').classList.toggle('active', type === 'branded');
+
+  document.getElementById('displayFormSection').style.display = type === 'form' ? 'block' : 'none';
+  document.getElementById('brandedDisplaySection').style.display = type === 'branded' ? 'block' : 'none';
+
+  log('Switched to ' + (type === 'form' ? 'Card Display Form' : 'Branded Card Display'), 'info');
+}
+
+// ==================== URL BUILDING ====================
+function getPciHost() {
+  return document.getElementById('environment').value;
+}
+
+function buildFormUrl() {
+  const base = getPciHost() + '/api/payments/displaycard';
+  const params = new URLSearchParams();
+
+  const sessionToken = document.getElementById('sessionToken').value;
+  if (sessionToken) {
+    params.set('sessionToken', sessionToken);
+  }
+
+  const cardToken = document.getElementById('cardToken').value;
+  if (cardToken) {
+    params.set('cardToken', cardToken);
+  }
+
+  const fields = ['brand', 'language', 'css', 'displayMode', 'showCvv'];
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    if (el && el.value) {
+      params.set(f, el.value);
+    }
+  });
+
+  const url = base + '?' + params.toString();
+  document.getElementById('formUrlPreview').textContent = url;
+  log('Built Display Form URL', 'info');
+  return url;
+}
+
+function buildBrandedUrl() {
+  const base = getPciHost() + '/api/payments/displaycard';
+  const params = new URLSearchParams();
+
+  const sessionToken = document.getElementById('sessionToken').value;
+  if (sessionToken) {
+    params.set('sessionToken', sessionToken);
+  }
+
+  const cardToken = document.getElementById('cardToken').value;
+  if (cardToken) {
+    params.set('cardToken', cardToken);
+  }
+
+  // Basic fields
+  const fields = ['brand', 'language', 'displayMode', 'showCvv'];
+  fields.forEach(f => {
+    const el = document.getElementById(f);
+    if (el && el.value) {
+      params.set(f, el.value);
+    }
+  });
+
+  // Branded-specific options
+  const brandedBackground = document.getElementById('brandedBackground').value;
+  const showBrandLogo = document.getElementById('showBrandLogo').value;
+  const showExpiry = document.getElementById('showExpiry').value;
+  const showCardholderName = document.getElementById('showCardholderName').value;
+
+  params.set('branded', 'true');
+  params.set('background', brandedBackground);
+  params.set('showBrandLogo', showBrandLogo);
+  params.set('showExpiry', showExpiry);
+  params.set('showCardholderName', showCardholderName);
+
+  // Use branded CSS if available, otherwise use selected css
+  const css = document.getElementById('css').value;
+  if (css) {
+    params.set('css', css);
+  }
+
+  const url = base + '?' + params.toString();
+  document.getElementById('brandedUrlPreview').textContent = url;
+  log('Built Branded Display URL', 'info');
+  return url;
+}
+
+// ==================== IFRAME LOADING ====================
+function validateBeforeLoad() {
+  const sessionToken = document.getElementById('sessionToken').value;
+  if (!sessionToken) {
+    showError('Authentication Required', 'Please generate a session token first');
+    log('No session token - generate one first', 'warning');
+    return false;
+  }
+
+  const cardToken = document.getElementById('cardToken').value;
+  if (!cardToken) {
+    showError('Card Token Required', 'Please enter a card token from the capture process');
+    log('No card token provided', 'warning');
+    return false;
+  }
+
+  return true;
+}
+
+function loadDisplayForm() {
+  if (!validateBeforeLoad()) return;
+
+  hideError();
+  hideSuccess();
+
+  const url = buildFormUrl();
+  const iframe = document.getElementById('formIframe');
+  const wrapper = document.getElementById('formIframeWrapper');
+
+  iframe.src = url;
+  wrapper.classList.add('active');
+  updateFormStatus('processing', 'Loading display form...');
+  log('Loading Display Form iframe', 'info');
+}
+
+function loadBrandedDisplay() {
+  if (!validateBeforeLoad()) return;
+
+  hideError();
+  hideSuccess();
+
+  const url = buildBrandedUrl();
+  const iframe = document.getElementById('brandedIframe');
+  const wrapper = document.getElementById('brandedIframeWrapper');
+
+  iframe.src = url;
+  wrapper.classList.add('active');
+  updateBrandedStatus('processing', 'Loading branded display...');
+  log('Loading Branded Display iframe', 'info');
+}
+
+function updateFormStatus(status, message) {
+  document.getElementById('formStatusDot').className = 'status-dot ' + status;
+  document.getElementById('formStatusText').textContent = message;
+}
+
+function updateBrandedStatus(status, message) {
+  document.getElementById('brandedStatusDot').className = 'status-dot ' + status;
+  document.getElementById('brandedStatusText').textContent = message;
+}
+
+// ==================== SESSION TOKEN ====================
+async function generateSessionToken() {
+  const apiKey = document.getElementById('apiKey').value;
+  if (!apiKey) {
+    showError('API Key Required', 'Please enter an API key');
+    return;
+  }
+
+  log('Generating session token...', 'info');
+
+  try {
+    const response = await fetch(getPciHost() + '/api/payments/paycard/tempsession', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'pciBookingApiKey': apiKey
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
+    }
+
+    const data = await response.json();
+    if (data.sessionToken) {
+      document.getElementById('sessionToken').value = data.sessionToken;
+      log('Session token generated successfully', 'success');
+      showSuccess('Token Generated', 'Session token is ready to use');
+    } else {
+      throw new Error('No token in response');
+    }
+  } catch (error) {
+    log('Failed to generate token: ' + error.message, 'error');
+    showError('Token Generation Failed', error.message);
+  }
+}
+
+// ==================== POSTMESSAGE HANDLING ====================
+function setupPostMessageListener() {
+  window.addEventListener('message', handlePostMessage, false);
+}
+
+function handlePostMessage(event) {
+  if (event.origin.indexOf('pcibooking.net') === -1) return;
+
+  const data = event.data;
+  log('Received: ' + (typeof data === 'string' ? data : JSON.stringify(data)), 'info');
+
+  // Handle string messages
+  if (typeof data === 'string') {
+    if (data === 'ready' || data === 'true') {
+      if (currentDisplayType === 'form') {
+        updateFormStatus('ready', 'Display form loaded successfully');
+        document.getElementById('formIframeWrapper').classList.add('active');
+      } else {
+        updateBrandedStatus('ready', 'Branded display loaded successfully');
+        document.getElementById('brandedIframeWrapper').classList.add('active');
+      }
+      log('Iframe ready', 'success');
+      showSuccess('Display Loaded', 'Card data is now displayed');
+      return;
+    }
+
+    if (data === 'false' || data === 'error' || data === 'invalid') {
+      if (currentDisplayType === 'form') {
+        updateFormStatus('error', 'Failed to load display');
+      } else {
+        updateBrandedStatus('error', 'Failed to load display');
+      }
+      log('Display error: ' + data, 'error');
+      showError('Display Error', 'Failed to load card display. Check the card token and try again.');
+      return;
+    }
+
+    // Handle dimension changes
+    if (data.indexOf('frameDimensionsChanged') === 0) {
+      const parts = data.split(':');
+      const height = parts[2];
+      if (height) {
+        const newHeight = Math.ceil(parseFloat(height)) + 20;
+        if (newHeight > 0) {
+          if (currentDisplayType === 'form') {
+            document.getElementById('formIframe').style.height = newHeight + 'px';
+          } else {
+            document.getElementById('brandedIframe').style.height = newHeight + 'px';
+          }
+          log('Iframe height set to: ' + newHeight + 'px', 'success');
+        }
+      }
+      return;
+    }
+  }
+
+  // Handle JSON messages
+  let parsed = null;
+  if (typeof data === 'string') {
+    try { parsed = JSON.parse(data); } catch (e) {}
+  } else if (typeof data === 'object') {
+    parsed = data;
+  }
+
+  if (parsed) {
+    if (parsed.messageType === 'DisplaySuccess' || parsed.status === 'success') {
+      if (currentDisplayType === 'form') {
+        updateFormStatus('ready', 'Card displayed successfully');
+      } else {
+        updateBrandedStatus('ready', 'Card displayed successfully');
+      }
+      log('Display success', 'success');
+      showSuccess('Display Loaded', 'Card data is now displayed');
+    }
+
+    if (parsed.messageType === 'DisplayError' || parsed.status === 'error') {
+      if (currentDisplayType === 'form') {
+        updateFormStatus('error', 'Display error');
+      } else {
+        updateBrandedStatus('error', 'Display error');
+      }
+      log('Display error: ' + (parsed.message || parsed.error || 'Unknown error'), 'error');
+      showError('Display Error', parsed.message || parsed.error || 'Failed to display card');
+    }
+  }
+}
+
+// ==================== LOGGING ====================
+function log(message, type = 'info') {
+  const logContent = document.getElementById('logContent');
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.innerHTML = '<span class="time">[' + time + ']</span>' + message;
+  logContent.appendChild(entry);
+  logContent.scrollTop = logContent.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('logContent').innerHTML = '';
+  log('Log cleared', 'info');
+}
+
+// ==================== MESSAGES ====================
+function showError(title, details) {
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorDetails').textContent = details;
+  document.getElementById('errorMessage').classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('errorMessage').classList.remove('show');
+}
+
+function showSuccess(title, details) {
+  document.getElementById('successTitle').textContent = title;
+  document.getElementById('successDetails').textContent = details;
+  document.getElementById('successMessage').classList.add('show');
+}
+
+function hideSuccess() {
+  document.getElementById('successMessage').classList.remove('show');
+}
+</script>
 </body>
 </html>
