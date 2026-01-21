@@ -1,0 +1,17 @@
+{
+  "name": "pci-booking-tests",
+  "version": "1.0.0",
+  "description": "Automated test suite for PCI Booking card capture integration",
+  "main": "test-runner.js",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:headed": "node test-runner.js --headed",
+    "test:specific": "node test-runner.js --test",
+    "test:report": "node test-runner.js --report"
+  },
+  "keywords": ["pci-booking", "payment", "testing", "automation"],
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}

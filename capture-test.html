@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>PCI Booking – Card Capture Test Suite</title>
+<!-- Google Fonts - Plus Jakarta Sans -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Forge library for RSA PKCS#1 v1.5 encryption -->
+<script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
+  .card-header { background: #333; color: white; padding: 16px 20px; border-bottom: 3px solid #fdb913; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 18px; font-weight: 500; }
+  .card-body { padding: 20px; }
+  .collapse-btn { background: #fdb913; border: none; color: #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .config-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .config-grid.collapsed { display: none; }
+  .form-group { margin-bottom: 6px; }
+  .form-group.full-width { grid-column: 1 / -1; }
+  .form-group.half-width { grid-column: span 2; }
+  .form-group label { display: block; font-size: 10px; font-weight: 600; color: #333; margin-bottom: 3px; text-transform: uppercase; }
+  .form-group .hint { font-size: 9px; color: #888; font-weight: normal; text-transform: none; }
+  .form-group input, .form-group textarea { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; font-family: inherit; }
+  .form-group select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; font-family: inherit; background-color: #fffbe6; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; appearance: none; -webkit-appearance: none; -moz-appearance: none; padding-right: 28px; cursor: pointer; }
+  .form-group textarea { resize: vertical; min-height: 50px; font-family: monospace; font-size: 11px; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #fdb913; box-shadow: 0 0 0 2px rgba(253,185,19,0.2); }
+  .section-title { font-size: 11px; font-weight: 700; color: #333; margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #fdb913; grid-column: 1 / -1; text-transform: uppercase; }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn { padding: 10px 20px; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+  .btn-primary { background: #fdb913; color: #333; }
+  .btn-primary:hover { background: #e5a811; box-shadow: 0 2px 8px rgba(253,185,19,0.4); }
+  .btn-secondary { background: #333; color: white; }
+  .btn-secondary:hover { background: #444; }
+  .btn-success { background: #4caf50; color: white; }
+  .btn-danger { background: #f44336; color: white; }
+
+  /* Two Column Layout */
+  .two-col { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Test Scenarios Panel */
+  .scenario-list { max-height: 500px; overflow-y: auto; }
+  .scenario-item { padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+  .scenario-item:hover { border-color: #fdb913; background: #fffef5; }
+  .scenario-item.active { border-color: #fdb913; background: #fffbe6; box-shadow: 0 0 0 2px rgba(253,185,19,0.2); }
+  .scenario-item.passed { border-left: 4px solid #4caf50; }
+  .scenario-item.failed { border-left: 4px solid #f44336; }
+  .scenario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .scenario-name { font-size: 13px; font-weight: 600; color: #333; }
+  .scenario-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+  .scenario-badge.visa { background: #1a1f71; color: white; }
+  .scenario-badge.mastercard { background: #eb001b; color: white; }
+  .scenario-badge.success { background: #4caf50; color: white; }
+  .scenario-badge.failure { background: #f44336; color: white; }
+  .scenario-desc { font-size: 11px; color: #666; }
+
+  /* Test Card Panel */
+  .test-card-panel { background: linear-gradient(135deg, #1a1f71, #434343); border-radius: 12px; padding: 20px; color: white; margin-bottom: 16px; position: relative; }
+  .test-card-panel.mastercard { background: linear-gradient(135deg, #eb001b, #f79e1b); }
+  .test-card-chip { width: 40px; height: 28px; background: linear-gradient(135deg, #ffd700, #b8860b); border-radius: 4px; margin-bottom: 16px; }
+  .test-card-number { font-size: 18px; letter-spacing: 2px; font-family: monospace; margin-bottom: 16px; }
+  .test-card-row { display: flex; justify-content: space-between; font-size: 12px; }
+  .test-card-label { opacity: 0.7; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; }
+  .test-card-brand { position: absolute; top: 16px; right: 16px; font-size: 28px; }
+
+  /* Copy Fields */
+  .copy-field { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .copy-field-label { font-size: 11px; color: #666; width: 80px; text-transform: uppercase; font-weight: 600; }
+  .copy-field-value { flex: 1; padding: 8px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; }
+  .copy-btn { padding: 8px 14px; background: #fdb913; border: none; border-radius: 4px; color: #333; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { background: #e5a811; }
+  .copy-btn.copied { background: #4caf50; color: white; }
+
+  /* OTP Info */
+  .otp-info { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 12px; }
+  .otp-info-title { font-weight: 700; font-size: 12px; color: #856404; margin-bottom: 4px; }
+  .otp-info-text { font-size: 12px; color: #856404; }
+
+  /* Iframe Section */
+  #iframeWrapper { width: 100%; background: #fff; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; transition: all 0.3s; }
+  #iframeWrapper.threeds-active { border-color: #fdb913; border-width: 2px; box-shadow: 0 0 15px rgba(253, 185, 19, 0.3); }
+  #iframePayment { display: block; width: 100%; border: 0; transition: height 0.3s ease; }
+
+  /* Status & Messages */
+  .custom-error-message { display: none; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); color: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; animation: slideDown 0.3s ease-out; }
+  .custom-error-message.show { display: flex; align-items: center; gap: 12px; }
+  .custom-success-message { display: none; background: linear-gradient(135deg, #4caf50 0%, #43a047 100%); color: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; animation: slideDown 0.3s ease-out; }
+  .custom-success-message.show { display: flex; align-items: center; gap: 12px; }
+  .error-icon { font-size: 24px; }
+  .error-content { flex: 1; }
+  .error-title { font-weight: 700; margin-bottom: 4px; }
+  .error-details { font-size: 13px; opacity: 0.9; }
+  .error-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .status-bar { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #f8f8f8; border-top: 1px solid #eee; flex-wrap: wrap; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+  .status-dot.ready { background: #4caf50; }
+  .status-dot.processing { background: #fdb913; animation: pulse 1s infinite; }
+  .status-dot.threeds { background: #fdb913; animation: pulse 0.5s infinite; }
+  .status-dot.error { background: #f44336; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+  .status-text { font-size: 13px; color: #666; }
+  .action-buttons { display: flex; gap: 8px; margin-left: auto; }
+
+  /* Log Panel */
+  .log-panel { background: #333; border-radius: 8px; overflow: hidden; }
+  .log-header { background: #222; color: white; padding: 10px 16px; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 2px solid #fdb913; }
+  .log-content { padding: 12px 16px; max-height: 150px; overflow-y: auto; font-family: 'Monaco','Menlo',monospace; font-size: 11px; }
+  .log-entry { color: #aaa; margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #555; word-break: break-all; }
+  .log-entry.info { border-color: #fdb913; color: #fdb913; }
+  .log-entry.success { border-color: #4caf50; color: #81c784; }
+  .log-entry.warning { border-color: #ff9800; color: #ffb74d; }
+  .log-entry.error { border-color: #f44336; color: #e57373; }
+  .log-entry .time { color: #777; margin-right: 8px; }
+  .clear-btn { background: transparent; border: 1px solid #fdb913; color: #fdb913; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
+  /* Navigation */
+  .nav-bar { background: #333; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center; }
+  .nav-bar a { color: white; text-decoration: none; font-size: 13px; padding: 8px 16px; border-radius: 4px; transition: all 0.2s; }
+  .nav-bar a:hover { background: #444; }
+  .nav-bar a.active { background: #fdb913; color: #333; font-weight: 600; }
+  .nav-title { color: #fdb913; font-weight: 700; font-size: 16px; margin-right: auto; }
+
+  @media (max-width: 900px) { .config-grid { grid-template-columns: repeat(2, 1fr); } .form-group.half-width { grid-column: span 2; } }
+  @media (max-width: 600px) { .config-grid { grid-template-columns: 1fr; } .form-group.half-width, .form-group.full-width { grid-column: span 1; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <span class="nav-title">PCI Booking Test Suite</span>
+    <a href="index.html">Dashboard</a>
+    <a href="capture-test.html" class="active">Card Capture</a>
+    <a href="display-test.html">Card Display</a>
+    <a href="index.html#fullconfig">Full Config</a>
+  </nav>
+
+  <!-- Configuration Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Configuration</h2>
+      <button class="collapse-btn" onclick="toggleConfig()">Show/Hide</button>
+    </div>
+    <div class="card-body">
+      <div class="config-grid" id="configGrid">
+        <div class="section-title">Account Selection</div>
+        <div class="form-group half-width">
+          <label>Select Account <span class="hint">- predefined from Dashboard</span></label>
+          <select id="accountSelector" onchange="loadSelectedAccount()">
+            <option value="">-- Select Account --</option>
+          </select>
+        </div>
+        <div class="form-group half-width">
+          <label>CSS Theme <span class="hint">- from account</span></label>
+          <select id="css">
+            <option value="">Default</option>
+          </select>
+        </div>
+
+        <div class="section-title">Environment & Authentication</div>
+        <div class="form-group">
+          <label>Environment</label>
+          <select id="environment" onchange="updateBaseUrl()">
+            <option value="https://service-plan.pcibooking.net">Developer</option>
+            <option value="https://service-qa.pcibooking.net">QA</option>
+            <option value="https://service-pilot.pcibooking.net" selected>Staging</option>
+            <option value="https://service.pcibooking.net">Production</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="apiKey" value="f00bcd3c278b4c778c9f4e54796eb070">
+        </div>
+        <div class="form-group">
+          <label>Auth Method</label>
+          <select id="authMethod" onchange="toggleAuthMethod()">
+            <option value="sessionToken" selected>Session Token</option>
+            <option value="accessToken">Access Token</option>
+          </select>
+        </div>
+        <!-- Session Token Section -->
+        <div class="form-group auth-session" id="authSessionSection">
+          <label>Session Token</label>
+          <input type="text" id="sessionToken" value="" placeholder="Click Generate">
+        </div>
+        <div class="form-group auth-session" id="authSessionBtn">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary btn-sm" onclick="generateSessionToken()" style="width:100%">Generate Token</button>
+        </div>
+        <!-- Access Token Section -->
+        <div class="form-group half-width auth-access" id="authAccessSection" style="display:none;">
+          <label>Access Token <span class="hint">- auto-generated, valid 60 min</span></label>
+          <input type="text" id="accessToken" value="" placeholder="Click Generate">
+        </div>
+        <div class="form-group auth-access" id="authAccessBtn" style="display:none;">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary btn-sm" onclick="generateAccessToken()" style="width:100%">Generate Access Token</button>
+        </div>
+        <div class="form-group full-width auth-access" id="authAccessHelper" style="display:none;">
+          <label>Data Block Preview <span class="hint">- before encryption (APIKey/#GUID/#ExpiryTime)</span></label>
+          <input type="text" id="accessTokenPreview" readonly placeholder="Will be shown when generated" style="background:#f5f5f5; font-family:monospace; font-size:10px;">
+        </div>
+
+        <div class="section-title">Required Parameters</div>
+        <div class="form-group">
+          <label>Brand</label>
+          <input type="text" id="brand" value="ArekSandbox">
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <input type="text" id="language" value="en">
+        </div>
+        <div class="form-group">
+          <label>Merchant Name</label>
+          <input type="text" id="merchantName" value="Test Merchant">
+        </div>
+
+        <div class="section-title">3D Secure Settings</div>
+        <div class="form-group">
+          <label>ThreeDS</label>
+          <select id="ThreeDS">
+            <option value="false">false</option>
+            <option value="true" selected>true</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount (cents)</label>
+          <input type="number" id="amount" value="1000">
+        </div>
+        <div class="form-group">
+          <label>Currency</label>
+          <input type="text" id="currencyCode" value="EUR">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" value="test@example.com">
+        </div>
+
+        <div class="section-title">Redirect URLs</div>
+        <div class="form-group half-width">
+          <label>Success URL <span class="hint">- with placeholders: {cardToken}, {cardType}, etc.</span></label>
+          <input type="text" id="success" value="https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}">
+        </div>
+        <div class="form-group half-width">
+          <label>Failure URL</label>
+          <input type="text" id="failure" value="https://pcib2.free.beeceptor.com/failure">
+        </div>
+
+        <div class="section-title">PostMessage Settings</div>
+        <div class="form-group">
+          <label>Submit with PostMessage</label>
+          <select id="submitWithPostMessage"><option value="true" selected>true</option><option value="false">false</option></select>
+        </div>
+        <div class="form-group">
+          <label>Custom Validation</label>
+          <select id="useCustomValidation"><option value="true" selected>true</option><option value="false">false</option></select>
+        </div>
+        <div class="form-group half-width">
+          <label>PostMessage Host <span class="hint">- parent domain for postMessage</span></label>
+          <input type="text" id="postMessageHost" value="https://raw.githack.com">
+        </div>
+
+        <div class="section-title">Form Settings</div>
+        <div class="form-group">
+          <label>CVV</label>
+          <select id="cvv"><option value="true" selected>true</option><option value="false">false</option></select>
+        </div>
+        <div class="form-group">
+          <label>Auto Detect Card</label>
+          <select id="autoDetectCardType"><option value="true" selected>true</option><option value="false">false</option></select>
+        </div>
+        <div class="form-group">
+          <label>Auto Focus</label>
+          <select id="autoFocus"><option value="true" selected>true</option><option value="false">false</option></select>
+        </div>
+        <div class="form-group">
+          <label>Name on Card Validation</label>
+          <select id="nameOnCardValidation"><option value="">default</option><option value="NO_DIGITS">NO_DIGITS</option></select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="loadIframe()">Load Iframe</button>
+        <button class="btn btn-secondary" onclick="generateCurrentToken()">Generate Token</button>
+        <button class="btn btn-secondary" onclick="saveConfig()">Save Config</button>
+        <button class="btn btn-secondary" onclick="loadSavedConfig()">Load Config</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Test Area -->
+  <div class="two-col">
+    <!-- Left: Test Scenarios -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <h2>Test Scenarios</h2>
+          <span style="font-size: 12px; opacity: 0.8;" id="scenarioCount">16 scenarios</span>
+        </div>
+        <div class="card-body">
+          <div class="scenario-list" id="scenarioList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Card Data -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Test Card Data</h2>
+          <span style="font-size: 12px; opacity: 0.8;">Copy to iframe</span>
+        </div>
+        <div class="card-body">
+          <div class="test-card-panel" id="testCardPanel">
+            <div class="test-card-chip"></div>
+            <div class="test-card-number" id="displayCardNumber">**** **** **** ****</div>
+            <div class="test-card-row">
+              <div>
+                <div class="test-card-label">Cardholder</div>
+                <div id="displayCardName">SELECT SCENARIO</div>
+              </div>
+              <div>
+                <div class="test-card-label">Expires</div>
+                <div id="displayCardExpiry">--/--</div>
+              </div>
+            </div>
+            <div class="test-card-brand" id="displayCardBrand">💳</div>
+          </div>
+
+          <div class="copy-field">
+            <span class="copy-field-label">Number</span>
+            <span class="copy-field-value" id="copyCardNumber">-</span>
+            <button class="copy-btn" onclick="copyField('copyCardNumber')">Copy</button>
+          </div>
+          <div class="copy-field">
+            <span class="copy-field-label">Expiry</span>
+            <span class="copy-field-value" id="copyExpiry">-</span>
+            <button class="copy-btn" onclick="copyField('copyExpiry')">Copy</button>
+          </div>
+          <div class="copy-field">
+            <span class="copy-field-label">CVV</span>
+            <span class="copy-field-value" id="copyCvv">-</span>
+            <button class="copy-btn" onclick="copyField('copyCvv')">Copy</button>
+          </div>
+          <div class="copy-field">
+            <span class="copy-field-label">Name</span>
+            <span class="copy-field-value" id="copyName">-</span>
+            <button class="copy-btn" onclick="copyField('copyName')">Copy</button>
+          </div>
+
+          <div class="otp-info" id="otpInfo" style="display: none;">
+            <div class="otp-info-title">3DS Challenge OTP Required</div>
+            <div class="otp-info-text" id="otpText">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Iframe -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <h2>Card Capture Iframe</h2>
+        </div>
+        <div class="card-body">
+          <div id="customErrorMessage" class="custom-error-message">
+            <span class="error-icon">⚠️</span>
+            <div class="error-content">
+              <div class="error-title" id="errorTitle">Error</div>
+              <div class="error-details" id="errorDetails">-</div>
+            </div>
+            <button class="error-close" onclick="hideError()">×</button>
+          </div>
+          <div id="customSuccessMessage" class="custom-success-message">
+            <span class="error-icon">✅</span>
+            <div class="error-content">
+              <div class="error-title" id="successTitle">Success</div>
+              <div class="error-details" id="successDetails">-</div>
+            </div>
+          </div>
+          <div id="iframeWrapper">
+            <iframe id="iframePayment" src="about:blank" scrolling="no"></iframe>
+          </div>
+        </div>
+        <div class="status-bar">
+          <div class="status-dot" id="statusDot"></div>
+          <span class="status-text" id="statusText">Select a scenario and click "Load Iframe"</span>
+          <div class="action-buttons">
+            <button class="btn btn-success btn-sm" onclick="validateForm()">Validate</button>
+            <button class="btn btn-primary btn-sm" onclick="submitForm()">Submit</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Panel -->
+      <div class="log-panel">
+        <div class="log-header">
+          <span>PostMessage Log</span>
+          <button class="clear-btn" onclick="clearLog()">Clear</button>
+        </div>
+        <div class="log-content" id="logContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== TEST SCENARIOS ====================
+const TEST_SCENARIOS = [
+  // Non-3DS
+  { id: 'non3ds-visa', name: 'Non-3DS Visa', card: '4111111111111111', brand: 'visa', type: 'success', threeDS: false, desc: 'Basic Visa without 3DS' },
+  { id: 'non3ds-mc', name: 'Non-3DS Mastercard', card: '5500000000000004', brand: 'mastercard', type: 'success', threeDS: false, desc: 'Basic Mastercard without 3DS' },
+  // 3DS Frictionless
+  { id: '3ds-frictionless-visa', name: '3DS Frictionless Visa', card: '4761739000060016', brand: 'visa', type: 'success', threeDS: true, flow: 'frictionless', desc: 'Completes without challenge' },
+  { id: '3ds-frictionless-mc', name: '3DS Frictionless MC', card: '5455330200000016', brand: 'mastercard', type: 'success', threeDS: true, flow: 'frictionless', desc: 'Completes without challenge' },
+  // 3DS DFP
+  { id: '3ds-dfp-visa', name: '3DS DFP Visa', card: '4761739001010010', brand: 'visa', type: 'success', threeDS: true, flow: 'dfp', desc: 'Device fingerprint flow' },
+  { id: '3ds-dfp-mc', name: '3DS DFP MC', card: '5185520050000010', brand: 'mastercard', type: 'success', threeDS: true, flow: 'dfp', desc: 'Device fingerprint flow' },
+  // 3DS Challenge
+  { id: '3ds-challenge-visa', name: '3DS Challenge Visa', card: '4018810000150015', brand: 'visa', type: 'success', threeDS: true, flow: 'challenge', otp: '0101 or 3333', desc: 'Requires OTP: 0101 or 3333' },
+  { id: '3ds-challenge-mc', name: '3DS Challenge MC', card: '5299910010000015', brand: 'mastercard', type: 'success', threeDS: true, flow: 'challenge', otp: '4445 or 9999', desc: 'Requires OTP: 4445 or 9999' },
+  // 3DS DFP + Challenge
+  { id: '3ds-dfp-challenge-visa', name: '3DS DFP+Challenge Visa', card: '4018810000190011', brand: 'visa', type: 'success', threeDS: true, flow: 'dfp+challenge', otp: '0101 or 3333', desc: 'DFP then OTP: 0101 or 3333' },
+  { id: '3ds-dfp-challenge-mc', name: '3DS DFP+Challenge MC', card: '5420711000401011', brand: 'mastercard', type: 'success', threeDS: true, flow: 'dfp+challenge', otp: '4445 or 9999', desc: 'DFP then OTP: 4445 or 9999' },
+  // Failure Tests
+  { id: '3ds-challenge-visa-fail', name: '3DS Challenge Visa FAIL', card: '4018810000150015', brand: 'visa', type: 'failure', threeDS: true, flow: 'challenge', otp: 'WRONG OTP', desc: 'Enter wrong OTP to test failure' },
+  { id: '3ds-challenge-mc-fail', name: '3DS Challenge MC FAIL', card: '5299910010000015', brand: 'mastercard', type: 'failure', threeDS: true, flow: 'challenge', otp: 'WRONG OTP', desc: 'Enter wrong OTP to test failure' },
+  { id: '3ds-dfp-challenge-visa-fail', name: '3DS DFP+Chal Visa FAIL', card: '4018810000190011', brand: 'visa', type: 'failure', threeDS: true, flow: 'dfp+challenge', otp: 'WRONG OTP', desc: 'Enter wrong OTP to test failure' },
+  { id: '3ds-dfp-challenge-mc-fail', name: '3DS DFP+Chal MC FAIL', card: '5420711000401011', brand: 'mastercard', type: 'failure', threeDS: true, flow: 'dfp+challenge', otp: 'WRONG OTP', desc: 'Enter wrong OTP to test failure' },
+  // Invalid Cards
+  { id: 'invalid-luhn', name: 'Invalid Card (Luhn)', card: '1234567890123456', brand: 'unknown', type: 'failure', threeDS: false, desc: 'Fails Luhn check' },
+  { id: 'expired-card', name: 'Expired Card', card: '4111111111111111', brand: 'visa', type: 'failure', threeDS: false, expiry: '01/20', desc: 'Past expiration date' }
+];
+
+// ==================== STATE ====================
+const DEFAULT_IFRAME_HEIGHT = 300;
+const THREEDS_IFRAME_HEIGHT = 600;
+
+let state = {
+  selectedScenario: null,
+  iframeReady: false,
+  threeDsActive: false
+};
+
+const iframe = document.getElementById('iframePayment');
+const wrapper = document.getElementById('iframeWrapper');
+
+// ==================== ACCOUNT MANAGEMENT ====================
+function getAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem('pci-accounts') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function populateAccountSelector() {
+  const accounts = getAccounts();
+  const selector = document.getElementById('accountSelector');
+
+  // Clear existing options except the first
+  selector.innerHTML = '<option value="">-- Select Account --</option>';
+
+  // Group accounts by environment
+  const envLabels = {
+    plan: 'Developer',
+    qa: 'QA',
+    pilot: 'Staging',
+    prod: 'Production'
+  };
+
+  const grouped = {};
+  accounts.forEach(acc => {
+    const env = acc.environment || 'pilot';
+    if (!grouped[env]) grouped[env] = [];
+    grouped[env].push(acc);
+  });
+
+  // Add optgroups
+  Object.keys(envLabels).forEach(env => {
+    if (grouped[env] && grouped[env].length > 0) {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = envLabels[env];
+      grouped[env].forEach(acc => {
+        const option = document.createElement('option');
+        option.value = acc.id;
+        option.textContent = acc.name;
+        optgroup.appendChild(option);
+      });
+      selector.appendChild(optgroup);
+    }
+  });
+}
+
+function loadSelectedAccount() {
+  const selector = document.getElementById('accountSelector');
+  const accountId = selector.value;
+
+  if (!accountId) {
+    // Clear CSS dropdown to default
+    const cssSelect = document.getElementById('css');
+    cssSelect.innerHTML = '<option value="">Default</option>';
+    return;
+  }
+
+  const account = getAccounts().find(a => a.id === accountId);
+  if (!account) return;
+
+  // Map environment to URL
+  const envUrls = {
+    plan: 'https://service-plan.pcibooking.net',
+    qa: 'https://service-qa.pcibooking.net',
+    pilot: 'https://service-pilot.pcibooking.net',
+    prod: 'https://service.pcibooking.net'
+  };
+
+  // Set environment
+  if (account.environment && envUrls[account.environment]) {
+    document.getElementById('environment').value = envUrls[account.environment];
+  }
+
+  // Set fields from account
+  if (account.apiKey) document.getElementById('apiKey').value = account.apiKey;
+  if (account.brand) document.getElementById('brand').value = account.brand;
+  if (account.merchantName) document.getElementById('merchantName').value = account.merchantName;
+  if (account.successUrl) document.getElementById('success').value = account.successUrl;
+  if (account.failureUrl) document.getElementById('failure').value = account.failureUrl;
+
+  // Populate CSS themes dropdown
+  const cssSelect = document.getElementById('css');
+  cssSelect.innerHTML = '<option value="">Default</option>';
+  if (account.cssThemes && account.cssThemes.length > 0) {
+    account.cssThemes.forEach((theme, index) => {
+      const option = document.createElement('option');
+      option.value = theme;
+      option.textContent = theme;
+      if (index === 0) option.selected = true;
+      cssSelect.appendChild(option);
+    });
+  }
+
+  log('Loaded account: ' + account.name, 'success');
+}
+
+function checkUrlForAccount() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const accountId = urlParams.get('account');
+
+  if (accountId) {
+    const selector = document.getElementById('accountSelector');
+    selector.value = accountId;
+    loadSelectedAccount();
+  }
+}
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', () => {
+  populateAccountSelector();
+  renderScenarios();
+  setupPostMessageListener();
+  loadSavedConfigSilent();
+  checkUrlForAccount();
+  log('Page loaded - Select a test scenario', 'info');
+});
+
+function renderScenarios() {
+  const container = document.getElementById('scenarioList');
+  container.innerHTML = TEST_SCENARIOS.map(s => `
+    <div class="scenario-item ${state.selectedScenario?.id === s.id ? 'active' : ''}"
+         data-id="${s.id}" onclick="selectScenario('${s.id}')">
+      <div class="scenario-header">
+        <span class="scenario-name">${s.name}</span>
+        <span class="scenario-badge ${s.brand}">${s.brand.toUpperCase()}</span>
+      </div>
+      <div class="scenario-desc">${s.desc}</div>
+      ${s.type === 'failure' ? '<span class="scenario-badge failure" style="margin-top:6px;">FAILURE TEST</span>' : ''}
+    </div>
+  `).join('');
+}
+
+function selectScenario(id) {
+  state.selectedScenario = TEST_SCENARIOS.find(s => s.id === id);
+  renderScenarios();
+  updateCardDisplay();
+
+  // Auto-set 3DS based on scenario
+  if (state.selectedScenario.threeDS) {
+    document.getElementById('ThreeDS').value = 'true';
+  } else {
+    document.getElementById('ThreeDS').value = 'false';
+  }
+
+  log('Selected: ' + state.selectedScenario.name, 'info');
+}
+
+function updateCardDisplay() {
+  const s = state.selectedScenario;
+  const panel = document.getElementById('testCardPanel');
+
+  if (!s) {
+    document.getElementById('displayCardNumber').textContent = '**** **** **** ****';
+    document.getElementById('displayCardName').textContent = 'SELECT SCENARIO';
+    document.getElementById('displayCardExpiry').textContent = '--/--';
+    document.getElementById('copyCardNumber').textContent = '-';
+    document.getElementById('copyExpiry').textContent = '-';
+    document.getElementById('copyCvv').textContent = '-';
+    document.getElementById('copyName').textContent = '-';
+    document.getElementById('otpInfo').style.display = 'none';
+    return;
+  }
+
+  const expiry = s.expiry || getFutureExpiry();
+  const cvv = '123';
+  const name = 'Three DS test';
+
+  // Update visual card
+  panel.className = 'test-card-panel ' + (s.brand === 'mastercard' ? 'mastercard' : '');
+  document.getElementById('displayCardNumber').textContent = formatCardNumber(s.card);
+  document.getElementById('displayCardName').textContent = name.toUpperCase();
+  document.getElementById('displayCardExpiry').textContent = expiry;
+  document.getElementById('displayCardBrand').textContent = s.brand === 'visa' ? '💳' : s.brand === 'mastercard' ? '🔴' : '💳';
+
+  // Update copy fields
+  document.getElementById('copyCardNumber').textContent = s.card;
+  document.getElementById('copyExpiry').textContent = expiry;
+  document.getElementById('copyCvv').textContent = cvv;
+  document.getElementById('copyName').textContent = name;
+
+  // OTP info
+  if (s.otp) {
+    document.getElementById('otpInfo').style.display = 'block';
+    document.getElementById('otpText').textContent = 'OTP: ' + s.otp;
+  } else {
+    document.getElementById('otpInfo').style.display = 'none';
+  }
+}
+
+// ==================== IFRAME FUNCTIONS ====================
+function buildUrl() {
+  const base = document.getElementById('environment').value + '/api/payments/capturecard';
+  const params = new URLSearchParams();
+
+  // Get authentication token based on selected method
+  const auth = getAuthToken();
+  if (auth.value) {
+    params.set(auth.type, auth.value);
+  }
+
+  const fields = [
+    'brand', 'language', 'css', 'cvv', 'autoDetectCardType',
+    'ThreeDS', 'merchantName', 'amount', 'currencyCode', 'email',
+    'submitWithPostMessage', 'useCustomValidation', 'postMessageHost',
+    'success', 'failure', 'autoFocus', 'nameOnCardValidation'
+  ];
+
+  fields.forEach(f => {
+    const val = document.getElementById(f)?.value;
+    if (val) params.set(f, val);
+  });
+
+  return base + '?' + params.toString();
+}
+
+function loadIframe() {
+  // Validate authentication token
+  const auth = getAuthToken();
+  if (!auth.value) {
+    const methodName = auth.type === 'sessionToken' ? 'Session Token' : 'Access Token';
+    log('No ' + methodName + ' - generate or provide one first', 'warning');
+    showError('Authentication Required', 'Please generate a ' + methodName + ' before loading the iframe');
+    return;
+  }
+
+  state.iframeReady = false;
+  state.threeDsActive = false;
+  wrapper.classList.remove('threeds-active');
+  hideError();
+  hideSuccess();
+  setIframeHeight(DEFAULT_IFRAME_HEIGHT);
+
+  const url = buildUrl();
+  iframe.src = url;
+  updateStatus('processing', 'Loading iframe with ' + auth.type + '...');
+  log('Loading: ' + url.substring(0, 80) + '...', 'info');
+}
+
+function setIframeHeight(height) {
+  iframe.style.height = height + 'px';
+}
+
+function updateStatus(status, message) {
+  document.getElementById('statusDot').className = 'status-dot ' + status;
+  document.getElementById('statusText').textContent = message;
+}
+
+function getPciHost() {
+  try {
+    return new URL(document.getElementById('environment').value).origin;
+  } catch(e) {
+    return 'https://service.pcibooking.net';
+  }
+}
+
+// ==================== POSTMESSAGE HANDLING ====================
+function setupPostMessageListener() {
+  window.addEventListener('message', handlePostMessage, false);
+}
+
+function handlePostMessage(event) {
+  if (event.origin.indexOf('pcibooking.net') === -1) return;
+
+  let data = event.data;
+  let parsed = null;
+
+  if (typeof data === 'string') {
+    try { parsed = JSON.parse(data); } catch(e) {}
+  } else if (typeof data === 'object') {
+    parsed = data;
+  }
+
+  if (parsed) {
+    log('Received: ' + JSON.stringify(parsed).substring(0, 100), 'info');
+  } else {
+    log('Received: ' + data, 'info');
+  }
+
+  // Handle string messages
+  if (typeof data === 'string' && !parsed) {
+    if (data === 'ready') {
+      state.iframeReady = true;
+      updateStatus('ready', 'Iframe ready - enter card details');
+      log('Iframe ready', 'success');
+      return;
+    }
+    if (data === 'valid' || data === 'true') {
+      log('Form is valid', 'success');
+      return;
+    }
+    if (data === 'false' || data === 'invalid') {
+      updateStatus('error', 'Form invalid');
+      log('Form is invalid', 'error');
+      return;
+    }
+    if (data === 'ThreeDsChallengeLoaded') {
+      activate3DSMode();
+      return;
+    }
+    if (data.indexOf('frameDimensionsChanged') === 0) {
+      const parts = data.split(':');
+      const height = parts[2];
+      if (height) {
+        // Add 20px buffer to prevent cut-off due to rounding/sub-pixel rendering
+        const newHeight = Math.ceil(parseFloat(height)) + 20;
+        // Allow resize if not in 3DS mode, or if 3DS needs more than the minimum height
+        if (newHeight > 0 && (!state.threeDsActive || newHeight > THREEDS_IFRAME_HEIGHT)) {
+          setIframeHeight(newHeight);
+        }
+      }
+      return;
+    }
+  }
+
+  // Handle object messages
+  if (parsed) {
+    if (parsed.messageType === 'CustomValidation') {
+      log('Custom validation request', 'warning');
+      // Accept all for testing
+      const response = { action: 'customValidationResponse', success: true };
+      iframe.contentWindow.postMessage(response, getPciHost());
+      log('Validation accepted', 'success');
+      return;
+    }
+    if (parsed.messageType === 'ThreeDsChallengeLoaded' || parsed.messageType === 'OTPdisplayed') {
+      activate3DSMode();
+      return;
+    }
+    if (parsed.messageType === 'CardSubmitSuccess') {
+      log('SUCCESS! Token: ' + parsed.cardToken, 'success');
+      showSuccess('Card Tokenized', 'Token: ' + parsed.cardToken.substring(0, 30) + '...');
+      updateStatus('ready', 'Success!');
+      deactivate3DSMode();
+      saveTestResult(true);
+      return;
+    }
+    if (parsed.messageType === 'CardSubmitFailure') {
+      log('FAILED: ' + JSON.stringify(parsed), 'error');
+      showError('Submission Failed', parsed.message || 'Card could not be processed');
+      updateStatus('error', 'Failed');
+      deactivate3DSMode();
+      saveTestResult(false);
+      return;
+    }
+  }
+}
+
+function activate3DSMode() {
+  if (state.threeDsActive) return;
+  state.threeDsActive = true;
+  setIframeHeight(THREEDS_IFRAME_HEIGHT);
+  wrapper.classList.add('threeds-active');
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  updateStatus('threeds', '3DS verification in progress...');
+  log('3DS Mode Activated', 'warning');
+}
+
+function deactivate3DSMode() {
+  state.threeDsActive = false;
+  setIframeHeight(DEFAULT_IFRAME_HEIGHT);
+  wrapper.classList.remove('threeds-active');
+}
+
+// ==================== FORM ACTIONS ====================
+function validateForm() {
+  if (!state.iframeReady) {
+    log('Iframe not ready', 'warning');
+    return;
+  }
+  hideError();
+  hideSuccess();
+  updateStatus('processing', 'Validating...');
+  iframe.contentWindow.postMessage('validate', getPciHost());
+}
+
+function submitForm() {
+  if (!state.iframeReady) {
+    log('Iframe not ready', 'warning');
+    return;
+  }
+  hideError();
+  hideSuccess();
+
+  if (document.getElementById('ThreeDS').value === 'true') {
+    setIframeHeight(THREEDS_IFRAME_HEIGHT);
+    wrapper.classList.add('threeds-active');
+    state.threeDsActive = true;
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  updateStatus('processing', 'Submitting...');
+  iframe.contentWindow.postMessage('submit', getPciHost());
+}
+
+// ==================== AUTHENTICATION ====================
+async function generateSessionToken() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    log('Enter API Key first', 'warning');
+    return;
+  }
+  log('Generating session token...', 'info');
+  try {
+    const response = await fetch(getPciHost() + '/api/payments/paycard/tempsession', {
+      method: 'POST',
+      headers: { 'Authorization': 'APIKEY ' + apiKey, 'Content-Type': 'application/json' }
+    });
+    if (response.ok) {
+      const token = await response.text();
+      document.getElementById('sessionToken').value = token.replace(/"/g, '');
+      log('Token generated (valid 5 min)', 'success');
+    } else {
+      log('Token generation failed: ' + response.status, 'error');
+    }
+  } catch (e) {
+    log('Error: ' + e.message, 'error');
+  }
+}
+
+function toggleAuthMethod() {
+  const method = document.getElementById('authMethod').value;
+  const sessionElements = document.querySelectorAll('.auth-session');
+  const accessElements = document.querySelectorAll('.auth-access');
+
+  if (method === 'sessionToken') {
+    sessionElements.forEach(el => el.style.display = '');
+    accessElements.forEach(el => el.style.display = 'none');
+    log('Switched to Session Token authentication', 'info');
+  } else {
+    sessionElements.forEach(el => el.style.display = 'none');
+    accessElements.forEach(el => el.style.display = '');
+    log('Switched to Access Token authentication', 'info');
+  }
+}
+
+// Cache for the certificate
+let cachedCertificate = null;
+
+// Certificate URL - stored locally in repo
+const CERT_URL = 'certs/pcibooking.pem';
+
+function updateBaseUrl() {
+  // Certificate is the same for all environments
+  log('Environment changed', 'info');
+}
+
+async function fetchCertificate() {
+  if (cachedCertificate) {
+    return cachedCertificate;
+  }
+
+  // Build the certificate URL relative to current page location
+  const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  const certUrl = baseUrl + CERT_URL;
+
+  log('Loading certificate...', 'info');
+
+  try {
+    const response = await fetch(certUrl);
+    if (!response.ok) {
+      throw new Error('Certificate fetch returned ' + response.status);
+    }
+
+    const cert = await response.text();
+
+    if (!cert || !cert.includes('BEGIN CERTIFICATE')) {
+      throw new Error('Invalid certificate format');
+    }
+
+    cachedCertificate = cert;
+    log('Certificate loaded successfully', 'success');
+    return cert;
+  } catch (e) {
+    log('Failed to load certificate: ' + e.message, 'error');
+    throw e;
+  }
+}
+
+async function generateAccessToken() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    log('Enter API Key first', 'warning');
+    showError('API Key Required', 'Please enter an API Key before generating access token');
+    return;
+  }
+
+  log('Generating access token...', 'info');
+
+  try {
+    // Fetch the certificate
+    const certificate = await fetchCertificate();
+
+    // Generate a GUID
+    const guid = generateGUID();
+
+    // Generate expiration time (60 minutes from now in ISO 8601 "o" format matching C#)
+    const expiryDate = new Date(Date.now() + 60 * 60 * 1000);
+    // C# ToString("o") format: 2026-01-07T16:45:00.0000000Z
+    const expiryTime = expiryDate.toISOString().replace(/\.\d{3}Z$/, '.0000000Z');
+
+    // Build the data block in PCI Booking format: APIKey#GUID#ExpiryTime
+    const dataBlock = apiKey + '#' + guid + '#' + expiryTime;
+
+    // Show the data block preview
+    document.getElementById('accessTokenPreview').value = dataBlock;
+
+    // Encrypt the data block with RSA PKCS#1 v1.5
+    const encryptedToken = rsaEncrypt(dataBlock, certificate);
+
+    document.getElementById('accessToken').value = encryptedToken;
+    log('Access token generated (valid 60 min)', 'success');
+  } catch (e) {
+    log('Access token generation failed: ' + e.message, 'error');
+    showError('Access Token Error', e.message);
+  }
+}
+
+function rsaEncrypt(data, pemCertificate) {
+  try {
+    // Parse the X.509 certificate using forge
+    const cert = forge.pki.certificateFromPem(pemCertificate);
+
+    // Get the public key from the certificate
+    const publicKey = cert.publicKey;
+
+    // Encrypt using RSA PKCS#1 v1.5 (false = PKCS1, true = OAEP)
+    const encrypted = publicKey.encrypt(data, 'RSAES-PKCS1-V1_5');
+
+    // Convert to uppercase HEX string (matching C# implementation)
+    let hexString = '';
+    for (let i = 0; i < encrypted.length; i++) {
+      hexString += ('0' + encrypted.charCodeAt(i).toString(16)).slice(-2).toUpperCase();
+    }
+    return hexString;
+  } catch (e) {
+    log('RSA encryption error: ' + e.message, 'error');
+    throw new Error('RSA encryption failed: ' + e.message);
+  }
+}
+
+function generateGUID() {
+  // Generate GUID without dashes (matching C# Guid.NewGuid().ToString().Replace("-",""))
+  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function getAuthToken() {
+  const method = document.getElementById('authMethod').value;
+  if (method === 'sessionToken') {
+    return { type: 'sessionToken', value: document.getElementById('sessionToken').value };
+  } else {
+    return { type: 'accessToken', value: document.getElementById('accessToken').value };
+  }
+}
+
+function generateCurrentToken() {
+  const method = document.getElementById('authMethod').value;
+  if (method === 'sessionToken') {
+    generateSessionToken();
+  } else {
+    generateAccessToken();
+  }
+}
+
+// ==================== CONFIG SAVE/LOAD ====================
+const CONFIG_FIELDS = [
+  'environment', 'apiKey', 'authMethod', 'accessToken', 'brand', 'language', 'css', 'merchantName',
+  'ThreeDS', 'amount', 'currencyCode', 'email', 'cvv', 'autoDetectCardType',
+  'success', 'failure', 'submitWithPostMessage', 'useCustomValidation',
+  'postMessageHost', 'autoFocus', 'nameOnCardValidation'
+];
+
+function saveConfig() {
+  const config = {};
+  CONFIG_FIELDS.forEach(f => {
+    config[f] = document.getElementById(f)?.value || '';
+  });
+  localStorage.setItem('pci-capture-config', JSON.stringify(config));
+  log('Configuration saved', 'success');
+}
+
+function loadSavedConfig() {
+  loadSavedConfigSilent();
+  log('Configuration loaded', 'success');
+}
+
+function loadSavedConfigSilent() {
+  try {
+    const config = JSON.parse(localStorage.getItem('pci-capture-config') || '{}');
+    Object.keys(config).forEach(k => {
+      const el = document.getElementById(k);
+      if (el) el.value = config[k];
+    });
+    // Initialize auth method UI based on saved preference
+    if (config.authMethod) {
+      toggleAuthMethod();
+    }
+  } catch(e) {}
+}
+
+// ==================== TEST RESULTS ====================
+function saveTestResult(passed) {
+  if (!state.selectedScenario) return;
+  const results = JSON.parse(localStorage.getItem('pci-test-results') || '[]');
+  results.push({
+    timestamp: new Date().toISOString(),
+    name: state.selectedScenario.name,
+    scenario: state.selectedScenario.id,
+    passed: passed,
+    environment: document.getElementById('environment').value
+  });
+  localStorage.setItem('pci-test-results', JSON.stringify(results));
+}
+
+// ==================== UI HELPERS ====================
+function showError(title, details) {
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorDetails').textContent = details;
+  document.getElementById('customErrorMessage').classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('customErrorMessage').classList.remove('show');
+}
+
+function showSuccess(title, details) {
+  document.getElementById('successTitle').textContent = title;
+  document.getElementById('successDetails').textContent = details;
+  document.getElementById('customSuccessMessage').classList.add('show');
+  setTimeout(hideSuccess, 5000);
+}
+
+function hideSuccess() {
+  document.getElementById('customSuccessMessage').classList.remove('show');
+}
+
+function log(message, type) {
+  type = type || 'info';
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.innerHTML = '<span class="time">[' + time + ']</span>' + message;
+  document.getElementById('logContent').appendChild(entry);
+  document.getElementById('logContent').scrollTop = document.getElementById('logContent').scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('logContent').innerHTML = '';
+}
+
+function toggleConfig() {
+  document.getElementById('configGrid').classList.toggle('collapsed');
+}
+
+function copyField(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(id).nextElementSibling;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+function formatCardNumber(num) {
+  return num.replace(/(.{4})/g, '$1 ').trim();
+}
+
+function getFutureExpiry() {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear() + 2).slice(-2);
+  return month + '/' + year;
+}
+</script>
+</body>
+</html>
