@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Grand Azure Hotel - Secure Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: #333;
+  }
+
+  /* Header */
+  .hotel-header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+  }
+  .hotel-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .hotel-logo span { color: #c9a227; }
+  .hotel-nav { display: flex; gap: 30px; }
+  .hotel-nav a {
+    color: #555;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  .hotel-nav a:hover { color: #c9a227; }
+
+  /* Main Container */
+  .booking-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+  }
+
+  /* Booking Summary Card */
+  .booking-summary {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .room-image {
+    width: 100%;
+    height: 250px;
+    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400"><rect fill="%231a1a2e" width="800" height="400"/><rect fill="%23c9a227" x="50" y="200" width="300" height="150" rx="10"/><rect fill="%23fff" x="70" y="220" width="100" height="80" rx="5"/><rect fill="%23fff" x="190" y="220" width="100" height="80" rx="5"/><circle fill="%23c9a227" cx="600" cy="150" r="80"/><rect fill="%232d2d44" x="400" y="250" width="350" height="120" rx="10"/></svg>');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+  }
+  .room-badge {
+    background: #c9a227;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .booking-details {
+    padding: 30px;
+  }
+  .booking-details h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+  }
+  .room-type {
+    color: #c9a227;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: #777; }
+  .detail-value { font-weight: 600; color: #333; }
+  .price-breakdown {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+  }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .price-row.total {
+    border-top: 2px solid #1a1a2e;
+    padding-top: 15px;
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .price-row.total .price { color: #c9a227; }
+
+  /* Payment Card */
+  .payment-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    height: fit-content;
+  }
+  .payment-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .payment-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .secure-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #4ade80;
+  }
+  .payment-body { padding: 25px 30px; }
+
+  /* 3DS Toggle Controls */
+  .controls-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  .controls-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+  .toggle-label {
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toggle-label .hint {
+    font-size: 11px;
+    color: #999;
+  }
+  .toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+  }
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 26px;
+  }
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+  input:checked + .toggle-slider {
+    background-color: #c9a227;
+  }
+  input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+  }
+  .toggle-row.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* Iframe Wrapper */
+  #iframeWrapper {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+  }
+  #iframeWrapper.threeds-active {
+    border-color: #c9a227;
+    border-width: 2px;
+    box-shadow: 0 0 20px rgba(201, 162, 39, 0.3);
+  }
+  #iframePayment {
+    display: block;
+    width: 100%;
+    border: 0;
+    transition: height 0.3s ease;
+  }
+
+  /* Status Messages */
+  .status-message {
+    display: none;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease-out;
+  }
+  .status-message.show { display: flex; align-items: center; gap: 10px; }
+  .status-message.error {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    color: white;
+  }
+  .status-message.success {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    color: white;
+  }
+  .status-message.info {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: white;
+  }
+  .status-message .close-btn {
+    margin-left: auto;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Status Bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    margin-top: 15px;
+    border-radius: 0 0 10px 10px;
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+  }
+  .status-dot.ready { background: #4ade80; }
+  .status-dot.processing { background: #c9a227; animation: pulse 1s infinite; }
+  .status-dot.threeds { background: #c9a227; animation: pulse 0.5s infinite; }
+  .status-dot.error { background: #ef4444; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+  .status-text { font-size: 12px; color: #666; flex: 1; }
+
+  /* Submit Button */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #c9a227 0%, #d4af37 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 15px;
+  }
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(201, 162, 39, 0.4);
+  }
+  .submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Log Panel (collapsible) */
+  .log-panel {
+    background: #1a1a2e;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+  }
+  .log-header {
+    background: #0f1629;
+    color: white;
+    padding: 10px 15px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  .log-content {
+    padding: 10px 15px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: 'Monaco','Menlo',monospace;
+    font-size: 10px;
+    display: none;
+  }
+  .log-content.show { display: block; }
+  .log-entry {
+    color: #aaa;
+    margin-bottom: 4px;
+    padding-left: 8px;
+    border-left: 2px solid #444;
+    word-break: break-all;
+  }
+  .log-entry.info { border-color: #c9a227; color: #c9a227; }
+  .log-entry.success { border-color: #4ade80; color: #4ade80; }
+  .log-entry.warning { border-color: #fbbf24; color: #fbbf24; }
+  .log-entry.error { border-color: #ef4444; color: #ef4444; }
+  .log-entry .time { color: #666; margin-right: 6px; }
+
+  /* Footer */
+  .booking-footer {
+    text-align: center;
+    padding: 30px;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+  }
+  .booking-footer a { color: #c9a227; text-decoration: none; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .booking-container {
+      grid-template-columns: 1fr;
+    }
+    .hotel-header {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="hotel-header">
+  <div class="hotel-logo">Grand <span>Azure</span> Hotel</div>
+  <nav class="hotel-nav">
+    <a href="#">Rooms</a>
+    <a href="#">Amenities</a>
+    <a href="#">Dining</a>
+    <a href="#">Contact</a>
+  </nav>
+</header>
+
+<!-- Booking Container -->
+<div class="booking-container">
+
+  <!-- Booking Summary -->
+  <div class="booking-summary">
+    <div class="room-image">
+      <span class="room-badge">Best Available Rate</span>
+    </div>
+    <div class="booking-details">
+      <h2>Deluxe Ocean View Suite</h2>
+      <div class="room-type">Premium Suite - Sea View</div>
+
+      <div class="detail-row">
+        <span class="detail-label">Check-in</span>
+        <span class="detail-value">Friday, Feb 14, 2025</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Check-out</span>
+        <span class="detail-value">Sunday, Feb 16, 2025</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Guests</span>
+        <span class="detail-value">2 Adults</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Room Size</span>
+        <span class="detail-value">45 m2</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Bed Type</span>
+        <span class="detail-value">King Size Bed</span>
+      </div>
+
+      <div class="price-breakdown">
+        <div class="price-row">
+          <span>Room Rate (2 nights)</span>
+          <span>EUR 400.00</span>
+        </div>
+        <div class="price-row">
+          <span>Taxes & Fees</span>
+          <span>EUR 50.00</span>
+        </div>
+        <div class="price-row total">
+          <span>Total</span>
+          <span class="price">EUR 450.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Card -->
+  <div class="payment-card">
+    <div class="payment-header">
+      <h3>Secure Payment</h3>
+      <div class="secure-badge">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+        </svg>
+        256-bit SSL
+      </div>
+    </div>
+    <div class="payment-body">
+
+      <!-- 3DS Controls -->
+      <div class="controls-section">
+        <div class="controls-title">Security Options</div>
+        <div class="toggle-row">
+          <span class="toggle-label">
+            3D Secure
+            <span class="hint">(Enhanced authentication)</span>
+          </span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="threeDSToggle" checked onchange="update3DSSettings()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row" id="unavailRow">
+          <span class="toggle-label">
+            Reject if 3DS Unavailable
+            <span class="hint">(Strict mode)</span>
+          </span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="unavailToggle" checked onchange="update3DSSettings()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Status Messages -->
+      <div id="statusMessage" class="status-message">
+        <span id="statusIcon"></span>
+        <span id="statusContent"></span>
+        <button class="close-btn" onclick="hideStatusMessage()">x</button>
+      </div>
+
+      <!-- Iframe Wrapper -->
+      <div id="iframeWrapper">
+        <iframe id="iframePayment" src="about:blank" scrolling="no"></iframe>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Initializing secure payment...</span>
+      </div>
+
+      <!-- Submit Button -->
+      <button class="submit-btn" id="submitBtn" onclick="submitForm()" disabled>
+        Complete Booking - EUR 450.00
+      </button>
+
+      <!-- Log Panel -->
+      <div class="log-panel">
+        <div class="log-header" onclick="toggleLog()">
+          <span>Debug Log</span>
+          <span id="logToggleIcon">+</span>
+        </div>
+        <div class="log-content" id="logContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="booking-footer">
+  Powered by <a href="https://www.pcibooking.net" target="_blank">PCI Booking</a> - PCI DSS Compliant Payment Processing
+</div>
+
+<script>
+// Configuration
+const API_KEY = 'b28d8a686b974e1897445c1c2197cef5';
+const PCI_HOST = 'https://service.pcibooking.net';
+const POST_MESSAGE_HOST = 'https://demo.pcibooking.net';
+
+// Iframe settings
+const DEFAULT_IFRAME_HEIGHT = 300;
+const THREEDS_IFRAME_HEIGHT = 600;
+
+// State
+let iframeReady = false;
+let threeDsActive = false;
+let sessionToken = '';
+
+// DOM Elements
+const iframe = document.getElementById('iframePayment');
+const wrapper = document.getElementById('iframeWrapper');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const submitBtn = document.getElementById('submitBtn');
+const logContent = document.getElementById('logContent');
+const statusMessage = document.getElementById('statusMessage');
+
+// Base iframe parameters (fixed)
+const BASE_PARAMS = {
+  brand: 'ArekSandbox',
+  language: 'en',
+  css: 'pcibooking-modern',
+  removeBaseCss: 'true',
+  cvv: 'true',
+  autoDetectCardType: 'true',
+  expirationMonths: 'numbers',
+  showOwnerId: 'false',
+  autoFocus: 'true',
+  amount: '45000',
+  currencyCode: 'EUR',
+  email: 'joe@test.com',
+  phone: '00123456789',
+  submitWithPostMessage: 'true',
+  useCustomValidation: 'false',
+  postMessageHost: POST_MESSAGE_HOST,
+  success: 'https://pcib2.free.beeceptor.com/Success.aspx?cardToken={cardToken}&cardType={cardType}&cardNumber={cardNumber}&cvv={cvv}&expiration={expiration}&cardHolderName={cardHolderName}&threeDSecIndication={threeDSecIndication}',
+  failure: 'https://pcib2.free.beeceptor.com/failure'
+};
+
+// Logging
+function log(message, type) {
+  type = type || 'info';
+  var time = new Date().toLocaleTimeString();
+  var entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.innerHTML = '<span class="time">[' + time + ']</span>' + message;
+  logContent.appendChild(entry);
+  logContent.scrollTop = logContent.scrollHeight;
+  console.log('[' + type.toUpperCase() + ']', message);
+}
+
+function toggleLog() {
+  var content = document.getElementById('logContent');
+  var icon = document.getElementById('logToggleIcon');
+  if (content.classList.contains('show')) {
+    content.classList.remove('show');
+    icon.textContent = '+';
+  } else {
+    content.classList.add('show');
+    icon.textContent = '-';
+  }
+}
+
+// Status updates
+function updateStatus(status, message) {
+  statusDot.className = 'status-dot ' + status;
+  statusText.textContent = message;
+}
+
+function showStatusMessage(type, icon, message) {
+  statusMessage.className = 'status-message ' + type + ' show';
+  document.getElementById('statusIcon').textContent = icon;
+  document.getElementById('statusContent').textContent = message;
+}
+
+function hideStatusMessage() {
+  statusMessage.classList.remove('show');
+}
+
+// Iframe height management
+function setIframeHeight(height) {
+  iframe.style.height = height + 'px';
+  log('Iframe height: ' + height + 'px', 'success');
+}
+
+function activate3DSMode() {
+  if (threeDsActive) return;
+  threeDsActive = true;
+  setIframeHeight(THREEDS_IFRAME_HEIGHT);
+  wrapper.classList.add('threeds-active');
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  updateStatus('threeds', '3D Secure verification in progress...');
+  log('3DS Challenge Activated', 'warning');
+}
+
+function deactivate3DSMode() {
+  threeDsActive = false;
+  setIframeHeight(DEFAULT_IFRAME_HEIGHT);
+  wrapper.classList.remove('threeds-active');
+  updateStatus('ready', 'Ready');
+  log('3DS Mode Deactivated', 'info');
+}
+
+// 3DS Toggle handling
+function update3DSSettings() {
+  var threeDSEnabled = document.getElementById('threeDSToggle').checked;
+  var unavailRow = document.getElementById('unavailRow');
+
+  if (threeDSEnabled) {
+    unavailRow.classList.remove('disabled');
+  } else {
+    unavailRow.classList.add('disabled');
+  }
+
+  log('3DS Settings updated - ThreeDS: ' + threeDSEnabled + ', Reject if unavail: ' + document.getElementById('unavailToggle').checked, 'info');
+
+  // Reload iframe with new settings
+  if (sessionToken) {
+    loadIframe();
+  }
+}
+
+// Build iframe URL
+function buildIframeUrl() {
+  var params = Object.assign({}, BASE_PARAMS);
+  params.sessionToken = sessionToken;
+  params.ThreeDS = document.getElementById('threeDSToggle').checked ? 'true' : 'false';
+  params.UnavailThreeDSAuth = document.getElementById('unavailToggle').checked ? 'Reject' : 'Accept';
+
+  var queryString = Object.keys(params)
+    .filter(function(key) { return params[key] !== ''; })
+    .map(function(key) { return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]); })
+    .join('&');
+
+  return PCI_HOST + '/api/payments/capturecard?' + queryString;
+}
+
+// Generate session token
+async function generateSessionToken() {
+  log('Generating session token...', 'info');
+  updateStatus('processing', 'Generating secure session...');
+
+  try {
+    var response = await fetch(PCI_HOST + '/api/payments/paycard/tempsession', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'APIKEY ' + API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      var token = await response.text();
+      sessionToken = token.replace(/"/g, '');
+      log('Session token generated successfully', 'success');
+      return true;
+    } else {
+      log('Failed to generate token: ' + response.status, 'error');
+      showStatusMessage('error', '!', 'Failed to initialize payment session. Please refresh the page.');
+      return false;
+    }
+  } catch (e) {
+    log('Error generating token: ' + e.message, 'error');
+    showStatusMessage('error', '!', 'Network error. Please check your connection.');
+    return false;
+  }
+}
+
+// Load iframe
+function loadIframe() {
+  iframeReady = false;
+  threeDsActive = false;
+  wrapper.classList.remove('threeds-active');
+  hideStatusMessage();
+  setIframeHeight(DEFAULT_IFRAME_HEIGHT);
+
+  var url = buildIframeUrl();
+  iframe.src = url;
+  updateStatus('processing', 'Loading secure payment form...');
+  log('Loading iframe with URL', 'info');
+  submitBtn.disabled = true;
+}
+
+// PostMessage handler
+function handlePostMessage(event) {
+  if (event.origin.indexOf('pcibooking.net') === -1) return;
+
+  var data = event.data;
+  var parsed = null;
+
+  if (typeof data === 'string') {
+    try { parsed = JSON.parse(data); } catch (e) {}
+  } else if (typeof data === 'object') {
+    parsed = data;
+  }
+
+  if (parsed) {
+    log('Received: ' + JSON.stringify(parsed), 'info');
+  } else {
+    log('Received: ' + data, 'info');
+  }
+
+  // Handle string messages
+  if (typeof data === 'string' && !parsed) {
+    if (data === 'ready') {
+      iframeReady = true;
+      hideStatusMessage();
+      updateStatus('ready', 'Enter your card details');
+      submitBtn.disabled = false;
+      log('Iframe ready', 'success');
+      return;
+    }
+    if (data === 'valid' || data === 'true') {
+      log('Form is valid', 'success');
+      return;
+    }
+    if (data === 'false' || data === 'invalid') {
+      updateStatus('error', 'Please fill all required fields correctly');
+      log('Form is invalid', 'error');
+      return;
+    }
+    if (data === 'ThreeDsChallengeLoaded') {
+      activate3DSMode();
+      return;
+    }
+    if (data.indexOf('frameDimensionsChanged') === 0) {
+      var parts = data.split(':');
+      var height = parts[2];
+      if (height) {
+        var newHeight = Math.ceil(parseFloat(height)) + 20;
+        if (newHeight > 0 && (!threeDsActive || newHeight > THREEDS_IFRAME_HEIGHT)) {
+          setIframeHeight(newHeight);
+        }
+      }
+      return;
+    }
+  }
+
+  // Handle parsed JSON messages
+  if (parsed) {
+    if (parsed.messageType === 'ThreeDsChallengeLoaded' || parsed.messageType === 'OTPdisplayed') {
+      activate3DSMode();
+      return;
+    }
+    if (parsed.messageType === 'OTPsubmitted') {
+      log('OTP submitted', 'success');
+      return;
+    }
+    if (parsed.messageType === 'CardSubmitSuccess') {
+      log('SUCCESS! Token: ' + parsed.cardToken, 'success');
+      showStatusMessage('success', '✓', 'Payment successful! Your booking is confirmed.');
+      updateStatus('ready', 'Booking confirmed');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Booking Confirmed';
+      deactivate3DSMode();
+      return;
+    }
+    if (parsed.messageType === 'CardSubmitFailure') {
+      log('FAILED: ' + JSON.stringify(parsed), 'error');
+      showStatusMessage('error', '!', parsed.message || 'Payment failed. Please try again.');
+      updateStatus('error', 'Payment failed');
+      deactivate3DSMode();
+      return;
+    }
+  }
+}
+
+window.addEventListener('message', handlePostMessage, false);
+
+// Form submission
+function submitForm() {
+  if (!iframeReady) {
+    log('Iframe not ready', 'warning');
+    return;
+  }
+
+  hideStatusMessage();
+
+  // Pre-expand for 3DS if enabled
+  if (document.getElementById('threeDSToggle').checked) {
+    setIframeHeight(THREEDS_IFRAME_HEIGHT);
+    wrapper.classList.add('threeds-active');
+    threeDsActive = true;
+    wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  updateStatus('processing', 'Processing payment...');
+  submitBtn.disabled = true;
+  log('Submitting form...', 'info');
+  iframe.contentWindow.postMessage('submit', PCI_HOST);
+}
+
+// Initialize on page load
+window.onload = async function() {
+  log('Hotel Booking Demo initialized', 'info');
+  log('Using Production API Key', 'info');
+
+  // Initialize 3DS toggle state
+  update3DSSettings();
+
+  // Generate session token and load iframe
+  var tokenGenerated = await generateSessionToken();
+  if (tokenGenerated) {
+    loadIframe();
+  }
+};
+</script>
+</body>
+</html>
