@@ -15,8 +15,8 @@ export default defineConfig({
     timeout: 10000,
   },
   use: {
-    // GitHub Pages URL - update if using custom domain
-    baseURL: 'https://pci-booking.github.io/Demos',
+    // raw.githack.com serves files with correct MIME types
+    baseURL: 'https://raw.githack.com/PCI-Booking/Demos/main',
     trace: 'on-first-retry',
     screenshot: 'on',
     video: 'retain-on-failure',
