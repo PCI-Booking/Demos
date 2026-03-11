@@ -1356,39 +1356,45 @@ async function fcGenerateSessionToken() {
 }
 
 // ==================== ACCESS TOKEN GENERATION ====================
-let fcCachedCertificate = null;
-const FC_CERT_URL = 'certs/pcibooking.pem';
+// Certificate embedded directly to avoid fetch issues with file:// protocol
+const FC_EMBEDDED_CERT = `-----BEGIN CERTIFICATE-----
+MIIF0TCCBLmgAwIBAgIQB5R3B4yarxen4e/cxqOEmzANBgkqhkiG9w0BAQsFADA8
+MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRwwGgYDVQQDExNBbWF6b24g
+UlNBIDIwNDggTTAyMB4XDTI1MDcxODAwMDAwMFoXDTI2MDgxNjIzNTk1OVowGzEZ
+MBcGA1UEAwwQKi5wY2lib29raW5nLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEP
+ADCCAQoCggEBAJqTk9h3cy4vznDng6t5rxNGe9A0FZajuSODXD6qk/Q8BJCczbzC
+HJnqM7NvXlqduhWj54MnZgmKT6ccVYtpDfpd1eq1pU7I9euG/t2/emWISlM3ixw3
+mrSx/nmZfojdKADLeXLfRiiBAZPvhOlUv5/JoSMeBLDV/IVlx0dlXKINQbEikbwK
+BY73t8RHbnweIJVrC3s+ITtXqhzRoQH/3RVE2HnmqOzDaOmbbODQXEiqasqNr3mo
+PVK+fqQB+F3DELjfvZ7ImOAdM+oMA44+Gk6Bk0YdqqbcXwJ/L360IYuXQcMbpTcm
+ajPu8rsBn1JONVjhUL1jVRkqDpaRhw2N2C8CAwEAAaOCAu4wggLqMB8GA1UdIwQY
+MBaAFMAxUs1aUMOCfHRxzsvpnPl664LiMB0GA1UdDgQWBBTlCqY6LSRg2DRcNeQZ
+1DyFe2Pp2jArBgNVHREEJDAighAqLnBjaWJvb2tpbmcubmV0gg5wY2lib29raW5n
+Lm5ldDATBgNVHSAEDDAKMAgGBmeBDAECATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0l
+BAwwCgYIKwYBBQUHAwEwOwYDVR0fBDQwMjAwoC6gLIYqaHR0cDovL2NybC5yMm0w
+Mi5hbWF6b250cnVzdC5jb20vcjJtMDIuY3JsMHUGCCsGAQUFBwEBBGkwZzAtBggr
+BgEFBQcwAYYhaHR0cDovL29jc3AucjJtMDIuYW1hem9udHJ1c3QuY29tMDYGCCsG
+AQUFBzAChipodHRwOi8vY3J0LnIybTAyLmFtYXpvbnRydXN0LmNvbS9yMm0wMi5j
+ZXIwDAYDVR0TAQH/BAIwADCCAX0GCisGAQQB1nkCBAIEggFtBIIBaQFnAHUA1219
+ENGn9XfCx+lf1wC/+YLJM1pl4dCzAXMXwMjFaXcAAAGYG4L96QAABAMARjBEAiAC
++HtHYjiRVvtHv/hyEZomwAdgkhX8zB0purcVfCGF0AIgbwelbGj6AIvXHem/AdDH
+oTd0pT3P6Fpnw3mTRkR3vuUAdgDCMX5XRRmjRe5/ON6ykEHrx8IhWiK/f9W1rXaa
+2Q5SzQAAAZgbgv4oAAAEAwBHMEUCICxTidNFPcpeAT8ExG4Fr+U+qjZ7k3Ozmesk
+F1fKxeDiAiEAtwRPWsuTkK1veAV0x3k7/6wLkyhDA9ohJkNPPL+mwrUAdgCUTkOH
++uzB74HzGSQmqBhlAcfTXzgCAT9yZ31VNy4Z2AAAAZgbgv45AAAEAwBHMEUCIQDI
+4R1QXZKhDHW1TNcxcSidx7fOSFU54wtcRV2Ii8YzCwIgIHSW3ZpyY2Tf0mKxMdee
+0sE/o9Hub5WIob+ecqAuUwMwDQYJKoZIhvcNAQELBQADggEBAKbmtGu5DW5P1c5a
+NbsbL+Fq1rnK6yZ9wUZpGRh/1Rp+fSU1FNIUzj91Lif+AccqcxeKMZIoKkmqr4yO
+NEEMIl/P16TigGcxLTuMjJHyTNoNVrTW2NorJ21tWkK1OaxsoPyR0dyONI2ZsPUC
+C2JUR5C+E4Q1zObb/l2qhDA2t3CIRAzqIOtj49tO5GEGplQwyVvGOWRmaCXQFSTR
+2NvUH3fb+lMtBdWB3SmHZST9QoJ7XY4eO9RsCvjO8Lm5GjpwZgIS+afWYtn+qEag
+INtN+3pXVVqLUG2VYq9E3HRvMXEtV5nY6J/wcmTxOLDvScnwOrNn4VUahklZE0tV
+2ESo4n0=
+-----END CERTIFICATE-----`;
 
-async function fcFetchCertificate() {
-  if (fcCachedCertificate) {
-    return fcCachedCertificate;
-  }
-
-  // Build the certificate URL relative to current page location
-  const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-  const certUrl = baseUrl + FC_CERT_URL;
-
-  fcLog('Loading certificate...', 'info');
-
-  try {
-    const response = await fetch(certUrl);
-    if (!response.ok) {
-      throw new Error('Certificate fetch returned ' + response.status);
-    }
-
-    const cert = await response.text();
-
-    if (!cert || !cert.includes('BEGIN CERTIFICATE')) {
-      throw new Error('Invalid certificate format');
-    }
-
-    fcCachedCertificate = cert;
-    fcLog('Certificate loaded successfully', 'success');
-    return cert;
-  } catch (e) {
-    fcLog('Failed to load certificate: ' + e.message, 'error');
-    throw e;
-  }
+function fcFetchCertificate() {
+  fcLog('Certificate loaded (embedded)', 'success');
+  return Promise.resolve(FC_EMBEDDED_CERT);
 }
 
 function fcGenerateGUID() {
